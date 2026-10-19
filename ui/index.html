@@ -1,0 +1,1291 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mod Inventur</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23e0a63a'/%3E%3Cpath d='M10 9h12M10 15h12M10 21h7' stroke='%231a1204' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #111315;
+  --rail: #16181b;
+  --surface: #1b1e21;
+  --surface-2: #22262a;
+  --surface-3: #2a2f34;
+  --line: #2c3136;
+  --line-soft: #23272b;
+  --ink: #f0efec;
+  --ink-2: #c3c2b7;
+  --muted: #8a8d88;
+  --accent: #e0a63a;
+  --accent-soft: rgba(224, 166, 58, 0.14);
+  --accent-ink: #1a1204;
+  --critical: #d03b3b;
+  --warning: #fab219;
+  --good: #0ca30c;
+  --s-used: #3987e5;
+  --s-dep: #d95926;
+  --s-indirect: #199e70;
+  --s-script: #c98500;
+  --s-unused: #d55181;
+  --s-other: #5f625d;
+  --radius: 14px;
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --mono: "Cascadia Mono", Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.45;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  overflow: hidden;
+}
+button { font: inherit; color: inherit; }
+::selection { background: var(--accent); color: var(--accent-ink); }
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 8px; border: 3px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-track { background: transparent; }
+
+.rail {
+  background: var(--rail);
+  border-right: 1px solid var(--line-soft);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 22px 20px 18px;
+}
+.brand-mark {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: linear-gradient(145deg, #f0bd57, #c98a1f);
+  display: grid; place-items: center;
+  box-shadow: 0 6px 18px rgba(224, 166, 58, 0.25), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+.brand h1 { font-family: var(--font-display); font-size: 17px; font-weight: 650; margin: 0; letter-spacing: 0.2px; }
+.brand p { margin: 0; font-size: 12px; color: var(--muted); }
+.rail-label { padding: 6px 20px 8px; font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.sg-list { overflow-y: auto; padding: 0 12px 16px; display: flex; flex-direction: column; gap: 6px; }
+.sg {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s;
+}
+.sg:hover { background: var(--surface); }
+.sg.active { background: var(--surface-2); border-color: rgba(224, 166, 58, 0.55); box-shadow: inset 3px 0 0 var(--accent); }
+.sg-thumb { width: 52px; height: 52px; border-radius: 10px; overflow: hidden; background: var(--surface-3); position: relative; }
+.sg-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sg-name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sg-map { font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sg-meta { font-size: 11.5px; color: var(--muted); margin-top: 2px; display: flex; gap: 8px; }
+
+.main { overflow-y: auto; min-height: 0; position: relative; scroll-behavior: smooth; }
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 40px 44px 30px;
+  min-height: 250px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.hero-bg { position: absolute; inset: 0; z-index: 0; }
+.hero-bg img {
+  position: absolute; inset: -60px;
+  width: calc(100% + 120px); height: calc(100% + 120px);
+  object-fit: cover;
+  filter: blur(34px) saturate(1.25) brightness(0.62);
+  transform: scale(1.06);
+  opacity: 0;
+  transition: opacity 0.6s;
+}
+.hero-bg img.loaded { opacity: 1; }
+.hero-bg::after {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(1200px 400px at 0% 0%, rgba(17,19,21,0.15), rgba(17,19,21,0.65)),
+    linear-gradient(180deg, rgba(17,19,21,0.25) 0%, rgba(17,19,21,0.92) 100%);
+}
+.hero-inner { position: relative; z-index: 1; display: grid; grid-template-columns: auto 1fr auto; gap: 28px; align-items: end; }
+.hero-cover {
+  width: 132px; height: 132px; border-radius: 18px; overflow: hidden;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08);
+  background: var(--surface-3);
+}
+.hero-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.eyebrow { font-size: 12px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--accent); font-weight: 650; }
+.hero h2 { font-family: var(--font-display); font-size: 38px; line-height: 1.1; font-weight: 700; margin: 6px 0 10px; letter-spacing: -0.4px; }
+.hero-meta { display: flex; flex-wrap: wrap; gap: 8px; }
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 11px; border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.08);
+  font-size: 12.5px; color: var(--ink-2);
+}
+.pill svg { opacity: 0.8; }
+.hero-stat { text-align: right; padding-bottom: 4px; }
+.hero-stat .num { font-family: var(--font-display); font-size: 64px; font-weight: 700; line-height: 1; letter-spacing: -1.5px; font-variant-numeric: tabular-nums; }
+.hero-stat .lbl { font-size: 14px; color: var(--ink-2); margin-top: 4px; }
+.hero-stat .sub { font-size: 13px; color: var(--accent); margin-top: 2px; font-weight: 600; }
+
+.compo { position: relative; z-index: 1; margin-top: 28px; }
+.compo-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.compo-head span { font-size: 13px; color: var(--ink-2); }
+.bar { display: flex; gap: 2px; height: 14px; }
+.seg {
+  height: 100%;
+  min-width: 6px;
+  border-radius: 2px;
+  transform-origin: left;
+  animation: grow 0.7s cubic-bezier(.2,.8,.2,1) both;
+  cursor: pointer;
+  position: relative;
+}
+.seg:first-child { border-radius: 4px 2px 2px 4px; }
+.seg:last-child { border-radius: 2px 4px 4px 2px; }
+.seg:only-child { border-radius: 4px; }
+.seg:hover { filter: brightness(1.18); }
+@keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 12px; }
+.legend button {
+  background: none; border: 0; padding: 0; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2);
+}
+.legend button:hover { color: var(--ink); }
+.legend .sw { width: 10px; height: 10px; border-radius: 3px; }
+.legend b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.tooltip {
+  position: fixed; pointer-events: none; z-index: 50;
+  background: #0b0c0d; border: 1px solid var(--line);
+  padding: 8px 11px; border-radius: 9px; font-size: 12.5px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+  opacity: 0; transition: opacity 0.12s;
+}
+.tooltip.show { opacity: 1; }
+.tooltip .t { font-weight: 600; display: flex; align-items: center; gap: 7px; }
+.tooltip .d { color: var(--ink-2); margin-top: 2px; }
+
+.content { padding: 22px 44px 140px; }
+.alert {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 14px 16px; border-radius: 12px; margin-bottom: 18px;
+  background: rgba(208, 59, 59, 0.1); border: 1px solid rgba(208, 59, 59, 0.45);
+}
+.alert.warn { background: rgba(250, 178, 25, 0.08); border-color: rgba(250, 178, 25, 0.4); }
+.alert.info { background: rgba(57, 135, 229, 0.08); border-color: rgba(57, 135, 229, 0.4); }
+.sg.other { opacity: 0.45; }
+.sg.other:hover, .sg.other.active { opacity: 0.85; }
+.sg-other { color: #8fb8ea; }
+.alert svg { flex-shrink: 0; }
+.alert strong { display: block; margin-bottom: 2px; }
+.alert ul { margin: 6px 0 0; padding-left: 18px; color: var(--ink-2); }
+
+.toolbar {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 12px 44px; margin: 0;
+  background: rgba(17,19,21,0.82);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--line-soft);
+}
+.chips { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+.chip {
+  border: 1px solid var(--line); background: var(--surface);
+  padding: 6px 12px; border-radius: 999px; cursor: pointer;
+  font-size: 13px; color: var(--ink-2);
+  display: inline-flex; align-items: center; gap: 7px;
+  transition: all 0.15s;
+}
+.chip:hover { border-color: #3c434a; color: var(--ink); }
+.chip.on { background: var(--ink); color: #111; border-color: var(--ink); }
+.chip .dot { width: 8px; height: 8px; border-radius: 50%; }
+.chip .n { font-variant-numeric: tabular-nums; opacity: 0.75; }
+.search {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 10px; padding: 0 12px; height: 36px; width: 260px;
+}
+.search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.search input { background: none; border: 0; outline: 0; color: var(--ink); font: inherit; width: 100%; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  border-radius: 10px; padding: 0 14px; height: 36px;
+  border: 1px solid var(--line); background: var(--surface);
+  cursor: pointer; font-weight: 600; font-size: 13px;
+  transition: all 0.15s;
+}
+.btn:hover { background: var(--surface-2); border-color: #3c434a; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { background: #ebb34a; }
+.btn.primary:disabled { background: var(--surface-3); color: var(--muted); border-color: var(--surface-3); cursor: not-allowed; }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--ink-2); }
+.btn.ghost:hover { color: var(--ink); background: var(--surface); }
+.btn .badge { background: var(--accent); color: var(--accent-ink); border-radius: 999px; padding: 0 7px; font-size: 11px; line-height: 18px; }
+
+.group { margin-top: 30px; }
+.group-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.group-title { display: flex; align-items: center; gap: 10px; }
+.group-title .sw { width: 12px; height: 12px; border-radius: 4px; }
+.group-title h3 { font-family: var(--font-display); font-size: 20px; margin: 0; font-weight: 650; }
+.group-title .count { color: var(--muted); font-size: 15px; font-variant-numeric: tabular-nums; }
+.group-desc { color: var(--ink-2); font-size: 13px; margin: 4px 0 0 22px; max-width: 760px; }
+.group-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.card {
+  position: relative;
+  display: grid; grid-template-columns: 60px 1fr; gap: 14px;
+  padding: 14px; border-radius: var(--radius);
+  background: var(--surface); border: 1px solid var(--line-soft);
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  animation: rise 0.35s ease both;
+}
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.card.pick { cursor: pointer; }
+.card.pick:hover { border-color: #3c434a; background: #1f2226; }
+.card.sel { border-color: var(--accent); background: linear-gradient(180deg, rgba(224,166,58,0.09), rgba(224,166,58,0.03)); box-shadow: 0 0 0 1px var(--accent) inset; }
+.card .stripe { position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 0 3px 3px 0; }
+.ico {
+  width: 60px; height: 60px; border-radius: 12px; overflow: hidden;
+  background: var(--surface-3); display: grid; place-items: center;
+  font-family: var(--font-display); font-weight: 700; font-size: 20px; color: var(--ink-2);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.05);
+  flex-shrink: 0;
+}
+.ico img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card-body { min-width: 0; }
+.card-title { font-weight: 600; font-size: 14.5px; line-height: 1.3; padding-right: 30px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card-name { font-family: var(--mono); font-size: 11.5px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.tag { font-size: 11.5px; padding: 2px 8px; border-radius: 6px; background: var(--surface-2); color: var(--ink-2); border: 1px solid var(--line-soft); }
+.tag.data { color: #e8c37a; border-color: rgba(224,166,58,0.35); background: rgba(224,166,58,0.08); }
+.tag.warn { color: #ffd27a; border-color: rgba(250,178,25,0.4); background: rgba(250,178,25,0.08); }
+.reasons { margin: 9px 0 0; padding: 0; list-style: none; font-size: 12.5px; color: var(--ink-2); }
+.reasons li { position: relative; padding-left: 13px; margin-top: 3px; }
+.reasons li::before { content: ""; position: absolute; left: 2px; top: 8px; width: 4px; height: 4px; border-radius: 50%; background: var(--muted); }
+.check {
+  position: absolute; top: 14px; right: 14px;
+  width: 22px; height: 22px; border-radius: 7px;
+  border: 1.5px solid #4a5157; background: var(--bg);
+  display: grid; place-items: center; transition: all 0.15s;
+}
+.card.sel .check { background: var(--accent); border-color: var(--accent); }
+.check svg { opacity: 0; transform: scale(0.6); transition: all 0.15s; }
+.card.sel .check svg { opacity: 1; transform: none; }
+.lock { position: absolute; top: 14px; right: 14px; color: var(--muted); }
+.compact .card { grid-template-columns: 44px 1fr; padding: 10px 12px; gap: 12px; }
+.compact .ico { width: 44px; height: 44px; border-radius: 10px; font-size: 15px; }
+.compact .reasons { margin-top: 5px; }
+
+.empty { text-align: center; padding: 80px 20px; color: var(--muted); }
+.empty h3 { color: var(--ink); font-family: var(--font-display); font-size: 22px; margin: 14px 0 6px; }
+
+.skel { background: linear-gradient(90deg, var(--surface) 0%, var(--surface-2) 50%, var(--surface) 100%); background-size: 200% 100%; animation: shimmer 1.3s infinite; border-radius: var(--radius); }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+.actionbar {
+  position: fixed; left: 300px; right: 0; bottom: 0; z-index: 20;
+  display: flex; justify-content: center; padding: 0 24px 22px;
+  pointer-events: none;
+  transform: translateY(120%); transition: transform 0.3s cubic-bezier(.2,.8,.2,1);
+}
+.actionbar.show { transform: none; }
+.actionbar-inner {
+  pointer-events: auto;
+  display: flex; align-items: center; gap: 18px;
+  background: rgba(30, 33, 37, 0.92); backdrop-filter: blur(18px);
+  border: 1px solid #3a4046; border-radius: 16px;
+  padding: 12px 12px 12px 22px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+}
+.actionbar .info b { font-size: 15px; }
+.actionbar .info span { color: var(--ink-2); font-size: 13px; margin-left: 8px; }
+.actionbar .hint { color: #ffd27a; font-size: 12.5px; }
+
+.overlay { position: fixed; inset: 0; z-index: 40; background: rgba(5,6,7,0.6); backdrop-filter: blur(4px); display: none; }
+.overlay.show { display: block; animation: fade 0.2s; }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+.modal {
+  position: fixed; z-index: 41; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(560px, 92vw); max-height: 82vh; display: none; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+}
+.modal.show { display: flex; animation: pop 0.22s cubic-bezier(.2,.8,.2,1); }
+@keyframes pop { from { opacity: 0; transform: translate(-50%, -47%) scale(0.98); } to { opacity: 1; transform: translate(-50%, -50%); } }
+.modal-head { padding: 22px 24px 8px; }
+.modal-head h3 { margin: 0; font-family: var(--font-display); font-size: 21px; }
+.modal-head p { margin: 8px 0 0; color: var(--ink-2); }
+.modal-list { overflow-y: auto; padding: 8px 24px; display: flex; flex-direction: column; gap: 6px; }
+.mini { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 10px; background: var(--surface-2); }
+.mini .ico { width: 30px; height: 30px; border-radius: 7px; font-size: 12px; }
+.mini .nm { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
+.mini .sz { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.modal-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 16px 24px 20px; border-top: 1px solid var(--line-soft); margin-top: 8px; }
+
+.drawer {
+  position: fixed; z-index: 41; top: 0; right: 0; bottom: 0; width: min(440px, 94vw);
+  background: var(--surface); border-left: 1px solid var(--line);
+  box-shadow: -30px 0 80px rgba(0,0,0,0.5);
+  transform: translateX(105%); transition: transform 0.28s cubic-bezier(.2,.8,.2,1);
+  display: flex; flex-direction: column;
+}
+.drawer.show { transform: none; }
+.drawer-head { display: flex; justify-content: space-between; align-items: center; padding: 22px 22px 14px; border-bottom: 1px solid var(--line-soft); }
+.drawer-head h3 { margin: 0; font-family: var(--font-display); font-size: 20px; }
+.drawer-body { overflow-y: auto; padding: 16px 22px 30px; }
+.hist { margin-bottom: 22px; display: flex; flex-direction: column; gap: 6px; }
+.hist-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.hist-head span { color: var(--ink-2); font-size: 12.5px; }
+.mini .restored { font-size: 11.5px; color: var(--muted); }
+.mini button { padding: 0 10px; height: 28px; font-size: 12px; }
+
+.toast {
+  position: fixed; z-index: 60; left: 50%; bottom: 28px; transform: translate(-50%, 160%);
+  background: #0b0c0d; border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px 18px; display: flex; gap: 10px; align-items: center;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5); transition: transform 0.3s cubic-bezier(.2,.8,.2,1);
+}
+.toast.show { transform: translate(-50%, 0); }
+.toast.err { border-color: rgba(208,59,59,0.6); }
+
+.lost { position: fixed; inset: 0; z-index: 70; display: none; place-items: center; background: rgba(5,6,7,0.85); backdrop-filter: blur(6px); text-align: center; }
+.lost.show { display: grid; }
+.lost h3 { font-family: var(--font-display); font-size: 22px; margin: 0 0 6px; }
+.lost p { color: var(--ink-2); margin: 0; }
+
+.folder {
+  margin-top: 22px;
+  display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: center;
+  padding: 20px 22px; border-radius: 16px;
+  background: linear-gradient(135deg, #1d2125, #191c1f);
+  border: 1px solid var(--line);
+}
+.folder-head { display: flex; align-items: center; gap: 12px; }
+.folder-ico { width: 40px; height: 40px; border-radius: 11px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; flex-shrink: 0; }
+.folder h3 { margin: 0; font-family: var(--font-display); font-size: 17px; font-weight: 650; }
+.folder-path { font-family: var(--mono); font-size: 11.5px; color: var(--muted); margin-top: 2px; word-break: break-all; }
+.folder .bar { height: 10px; margin-top: 16px; }
+.folder .legend { margin-top: 10px; }
+.folder-side { text-align: right; }
+.folder-side .big { font-family: var(--font-display); font-size: 34px; font-weight: 700; line-height: 1; letter-spacing: -0.6px; font-variant-numeric: tabular-nums; }
+.folder-side .small { color: var(--ink-2); font-size: 12.5px; margin: 4px 0 12px; }
+.folder-done { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: 13px; }
+.share { margin-top: 10px; font-size: 12.5px; color: #ffd27a; display: flex; gap: 8px; align-items: center; }
+
+.choice { padding: 6px 24px 4px; display: flex; flex-direction: column; gap: 8px; }
+.choice-label { font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-top: 6px; }
+.opt {
+  display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start;
+  padding: 11px 13px; border-radius: 12px; border: 1px solid var(--line);
+  background: var(--surface-2); cursor: pointer; transition: all 0.15s;
+}
+.opt:hover { border-color: #3c434a; }
+.opt.on { border-color: var(--accent); background: linear-gradient(180deg, rgba(224,166,58,0.10), rgba(224,166,58,0.04)); }
+.opt input { display: none; }
+.radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #4a5157; margin-top: 1px; display: grid; place-items: center; }
+.opt.on .radio { border-color: var(--accent); }
+.opt.on .radio::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.opt b { display: block; font-size: 13.5px; }
+.opt span { font-size: 12.5px; color: var(--ink-2); }
+.opt code { font-family: var(--mono); font-size: 11px; color: var(--muted); word-break: break-all; }
+.note { margin: 2px 24px 0; padding: 10px 12px; border-radius: 10px; background: rgba(57,135,229,0.08); border: 1px solid rgba(57,135,229,0.3); font-size: 12.5px; color: var(--ink-2); }
+.modal.wide { width: min(760px, 94vw); }
+.listhead { display: flex; justify-content: space-between; align-items: center; padding: 10px 24px 4px; font-size: 12.5px; color: var(--ink-2); }
+.listhead button { background: none; border: 0; color: var(--accent); cursor: pointer; font-weight: 600; font-size: 12.5px; padding: 0; }
+.mini.pickrow { cursor: pointer; border: 1px solid transparent; }
+.mini.pickrow:hover { border-color: #3c434a; }
+.mini .cb { width: 18px; height: 18px; border-radius: 6px; border: 1.5px solid #4a5157; display: grid; place-items: center; flex-shrink: 0; }
+.mini.on .cb { background: var(--accent); border-color: var(--accent); }
+.mini .cb svg { opacity: 0; }
+.mini.on .cb svg { opacity: 1; }
+.kind { font-size: 11px; padding: 1px 7px; border-radius: 6px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.kind.copy { color: #ffd27a; border-color: rgba(250,178,25,0.4); }
+.hist-title { font-weight: 600; font-size: 13.5px; }
+
+@media (max-width: 980px) {
+  .folder { grid-template-columns: 1fr; }
+  .folder-side { text-align: left; }
+  body { grid-template-columns: 1fr; overflow: auto; }
+  .rail { display: none; }
+  .hero, .content, .toolbar { padding-left: 16px; padding-right: 16px; }
+  .hero-inner { grid-template-columns: 1fr; }
+  .hero-stat { text-align: left; }
+  .actionbar { left: 0; }
+  .search { width: 100%; }
+}
+</style>
+</head>
+<body>
+<aside class="rail">
+  <div class="brand">
+    <div class="brand-mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a1204" stroke-width="2.4" stroke-linecap="round"><path d="M7 6h10M7 12h10M7 18h6"/></svg></div>
+    <div><h1>Mod Inventur</h1><p data-i18n="brandSub"></p></div>
+  </div>
+  <div class="rail-label" data-i18n="savegames"></div>
+  <div class="sg-list" id="sgList"></div>
+</aside>
+
+<div class="main" id="main">
+  <section class="hero" id="hero">
+    <div class="hero-bg"><img id="heroBg" alt=""></div>
+    <div class="hero-inner">
+      <div class="hero-cover skel" id="heroCover"></div>
+      <div>
+        <div class="eyebrow" id="heroEyebrow">&nbsp;</div>
+        <h2 id="heroTitle"></h2>
+        <div class="hero-meta" id="heroMeta"></div>
+      </div>
+      <div class="hero-stat" id="heroStat"></div>
+    </div>
+    <div class="compo" id="compo"></div>
+    <div style="position:relative;z-index:1" id="folderPanel"></div>
+  </section>
+
+  <div class="toolbar" id="toolbar">
+    <div class="chips" id="chips"></div>
+    <label class="search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--muted)"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="search" autocomplete="off">
+    </label>
+    <button class="btn" id="histBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg>
+      <span data-i18n="history"></span> <span class="badge" id="histCount" hidden></span>
+    </button>
+  </div>
+
+  <div class="content" id="content"></div>
+</div>
+
+<div class="actionbar" id="actionbar">
+  <div class="actionbar-inner">
+    <div class="info"><b id="selCount"></b><span id="selSize"></span></div>
+    <span class="hint" id="selHint" data-i18n="gameRunningHint" hidden></span>
+    <button class="btn ghost" id="selClear" data-i18n="clearSel"></button>
+    <button class="btn primary" id="selApply">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      <span data-i18n="disableBtn"></span>
+    </button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay"></div>
+<div class="modal" id="modal">
+  <div class="modal-head"><h3 id="modalTitle"></h3><p id="modalText"></p></div>
+  <div class="choice" id="modalChoice"></div>
+  <div class="modal-list" id="modalList"></div>
+  <div class="modal-foot">
+    <button class="btn ghost" id="modalCancel" data-i18n="cancel"></button>
+    <button class="btn primary" id="modalOk" data-i18n="disable"></button>
+  </div>
+</div>
+<div class="modal wide" id="fmodal">
+  <div class="modal-head"><h3 id="fTitle" data-i18n="folderTitle"></h3><p id="fText"></p></div>
+  <div class="choice" id="fChoice"></div>
+  <div class="listhead" id="fListHead"></div>
+  <div class="modal-list" id="fList"></div>
+  <div class="modal-foot">
+    <button class="btn ghost" id="fCancel" data-i18n="cancel"></button>
+    <button class="btn primary" id="fOk" data-i18n="folderOkDefault"></button>
+  </div>
+</div>
+
+<aside class="drawer" id="drawer">
+  <div class="drawer-head">
+    <h3 data-i18n="history"></h3>
+    <button class="btn ghost" id="drawerClose"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+</aside>
+
+<div class="tooltip" id="tooltip"></div>
+<div class="toast" id="toast"></div>
+<div class="lost" id="lost"><div><h3 data-i18n="lostTitle"></h3><p data-i18n="lostText"></p></div></div>
+
+<script>
+const token = new URLSearchParams(location.search).get("t");
+
+const I18N = {
+  de: {
+    brandSub: "Was dein Spielstand wirklich nutzt", savegames: "Spielstände", loadingSg: "Spielstand wird geladen",
+    search: "Mod suchen", history: "Verlauf", gameRunningHint: "Spiel läuft. Bitte erst beenden.", clearSel: "Auswahl aufheben",
+    disableBtn: "Im Spielstand deaktivieren", cancel: "Abbrechen", disable: "Deaktivieren", folderTitle: "Mods-Ordner aufräumen",
+    folderOkDefault: "Aus dem Ordner nehmen", close: "Schließen", lostTitle: "Verbindung getrennt",
+    lostText: "Der Hintergrunddienst läuft nicht mehr. Bitte die Mod Inventur neu starten.",
+    gUnused: "Unbenutzt", gUnusedDesc: "Aktiv, aber nichts davon steht, fährt oder lagert in diesem Spielstand. Sichere Kandidaten zum Deaktivieren.",
+    gScript: "Scripts", gScriptDesc: "Scripts platzieren nichts, ihre Nutzung lässt sich nicht messen. Hier entscheidest du selbst. Eine Markierung zeigt, ob ein Script eigene Daten im Spielstand hinterlegt hat.",
+    gUsed: "Benutzt", gUsedDesc: "Gebäude, Fahrzeuge oder Objekte aus diesen Mods stehen im Spielstand. Geschützt.",
+    gIndirect: "Indirekt", gIndirectDesc: "Kein Objekt platziert, aber ein Fülltyp dieses Mods liegt als Bestand im Spielstand. Geschützt.",
+    gDep: "Abhängigkeit", gDepDesc: "Wird von einem benutzten Mod, einem aktiven Script oder der Karte vorausgesetzt. Geschützt.",
+    gOther: "Sonstige", gOtherDesc: "Die Karte selbst, offizielle DLCs, dauerhaft gesperrte Mods wie Precision Farming und aktive Mods, die nicht im Mods-Ordner dieses Spielstands liegen. Alle geschützt.",
+    all: "Alle", modsN: "{n} Mods", modsN1: "1 Mod", tagShop1: "1 Shop-Artikel", playtime: "{h} h Spielzeit", activeMods: "{n} aktive Mods", unusedLbl: "Mods ohne Nutzung",
+    unusedSize: "{s} unnötig geladen", compoHead: "Zusammensetzung der {n} aktiven Mods", tagShop: "{n} Shop-Artikel",
+    tagData: "Daten im Spielstand", tagScripts: "enthält Scripts", tagInactive: "nicht aktiv", protected: "Geschützt",
+    gameRunTitle: "Das Spiel läuft gerade", gameRunText: "Ansehen geht, ändern erst nach dem Beenden. Sonst überschreibt das Spiel die Änderung beim nächsten Speichern.",
+    unknownTitle: "{n} aktive Mods liegen nicht im Mods-Ordner",
+    unknownText: "Wahrscheinlich nutzt dieser Spielstand einen anderen Mods-Ordner als den gerade im Spiel eingestellten. Das Ergebnis ist dann unvollständig. Stell im Spiel den passenden Mods-Ordner ein und lade die Mod Inventur neu.",
+    warnTitle1: "1 Mod braucht Aufmerksamkeit", warnTitleN: "{n} Mods brauchen Aufmerksamkeit",
+    warnText: "Sonst gehen beim nächsten Speichern Objekte verloren oder das Spiel bemängelt fehlende Abhängigkeiten.",
+    selectAll: "Alle auswählen", selectNone: "Keine auswählen", emptyTitle: "Nichts gefunden", emptyText: "Kein Mod passt zu Filter und Suche.",
+    sel1: "1 Mod ausgewählt", selN: "{n} Mods ausgewählt", modalTitle1: "1 Mod deaktivieren?", modalTitleN: "{n} Mods deaktivieren?",
+    modalText: "Dieser Spielstand lädt sie danach nicht mehr. Vorher wird ein Backup angelegt, über den Verlauf holst du jeden Mod einzeln zurück.",
+    modalScriptsHead: "{n} davon sind Scripts.", modalScriptsText: " Ihre Daten im Spielstand bleiben liegen und wirken wieder, sobald du sie zurückholst.",
+    choiceFiles: "Was passiert mit den Mod-Dateien?", optRemoveTitle: "Auch aus dem Mods-Ordner nehmen",
+    optRemoveText: "Links werden gelöst, die Datei bleibt in deiner Bibliothek. Echte Dateien wandern in einen Archivordner{archive}.{shared}",
+    optShared: " Was ein anderer Spielstand dieses Ordners noch aktiv hat, bleibt liegen.",
+    optKeepTitle: "Im Mods-Ordner lassen", optKeepText: "Nur im Spielstand abschalten. Das Spiel liest die Dateien beim Start weiterhin ein.",
+    toastDisabled: "{n} Mods im Spielstand deaktiviert", toastDisabledFolder: ", {n} davon aus dem Mods-Ordner genommen",
+    toastKept: " ({n} bleiben, weil sie noch gebraucht werden)", histEmptyTitle: "Noch nichts deaktiviert",
+    histEmptyText: "Hier erscheint alles, was du in diesem Spielstand abschaltest.", histFolder: "Aus dem Mods-Ordner genommen",
+    mismatchTitle: "Dieser Spielstand gehört zu einem anderen Mods-Ordner", mismatchText: "Im Spiel ist gerade {folder} als Mods-Ordner eingestellt, die Karte dieses Spielstands liegt dort aber nicht. Die Mod Inventur kann ihn deshalb nicht prüfen. Stell im Spiel den passenden Mods-Ordner ein und starte die Mod Inventur neu.", otherFolder: "anderer Mods-Ordner", eMismatch: "Dieser Spielstand gehört zu einem anderen Mods-Ordner als dem gerade im Spiel eingestellten.",
+    histSg: "Im Spielstand deaktiviert", histBoth: "Deaktiviert und aus dem Mods-Ordner genommen", undone: "zurückgeholt", toastUndone: "{n} Mods zurückgeholt", backInFolder: "wieder im Ordner", backActive: "wieder aktiv", putBack: "Zurücklegen",
+    restore: "Zurückholen", restoreAll: "Alle zurückholen",
+    gameStillRunning: "Das Spiel läuft noch. Bitte erst beenden.", toastBackFolder: "{n} Mods wieder im Mods-Ordner",
+    failedN: ", {n} fehlgeschlagen", toastBackActive: "{n} Mods wieder aktiv", loadErrTitle: "Spielstand konnte nicht gelesen werden",
+    folderErr: "Mods-Ordner konnte nicht gelesen werden: ", kindKarte: "Kartenordner aus dem ModManager",
+    kindGame: "Mods-Ordner, den das Spiel gerade nutzt", segUsed: "Gebraucht", segUnused: "Lädt kein Spielstand",
+    folderHead: "Mods-Ordner: {n} Mods, {s}", sharedBy: "Wird auch von {names} genutzt. Was dort aktiv ist, bleibt im Ordner.",
+    folderSmall: "{n} Mods, die kein Spielstand lädt", folderBtn: "Ordner aufräumen", folderDone: "Ordner enthält nur Gebrauchtes",
+    readingMods: "Lese die Mods ein …",
+    fLinks: "<b>{n}</b> davon sind nur Links. Es wird nur der Link entfernt, die Datei bleibt in deiner Mod-Bibliothek.",
+    fCopies: "<b>{n}</b> sind echte Dateien, die nur hier liegen. Was damit passieren soll, wählst du unten.",
+    fText: "Diese Mods liegen im Mods-Ordner, aber kein Spielstand, der den Ordner nutzt, lädt sie. Das Spiel liest beim Start trotzdem jede einzelne ein.",
+    realFiles: "Echte Dateien", optMoveTitle: "In einen Archivordner verschieben", optMoveText: "Jederzeit über den Verlauf zurückholbar. Ziel: {path}",
+    optLeaveTitle: "Im Mods-Ordner liegen lassen", optLeaveText: "Nur Links werden entfernt, echte Dateien bleiben unangetastet.",
+    scopedNote: "Der ModManager füllt diesen Kartenordner danach nicht mehr automatisch mit der kompletten Bibliothek auf, sondern nur noch mit dem, was die Spielstände dieser Karte brauchen.",
+    kindLink: "Link", kindCopy: "echte Datei", pickedOf: "{a} von {b} ausgewählt", fOkN: "{n} Mods aus dem Ordner nehmen · {s}",
+    nothing: "Nichts zu tun", toastFolderClean: "{n} Mods aus dem Mods-Ordner genommen", skippedN: ", {n} übersprungen", errorN: "Fehler {n}",
+    rLocked: "Immer gesperrt, führt Bodenkarten für alle Felder im Spielstand", rMap: "Karte dieses Spielstands",
+    rPlaced: "{n} in {file}: {labels}", rRefs: "{n} Verweise in Fahrzeug- und Objektdaten",
+    rFill: "Fülltyp {ft} mit {l} l Bestand ({files})", rNeededBy: "benötigt von {x}", rDlc: "Offizieller DLC, wird vom Spiel selbst verwaltet",
+    rModDescBad: "modDesc.xml nicht lesbar", rNotFound: "Nicht im Mods-Ordner und nicht in der Bibliothek gefunden",
+    rMixedData: "{n} Shop-Artikel ungenutzt, aber die Scripts des Mods haben Daten im Spielstand", rOwnData: "Eigene Daten im Spielstand: {x}",
+    rElemData: "Daten an Fahrzeugen und Objekten: {x}", rNothingBought: "Nichts davon gekauft oder platziert",
+    rUsedMarket: "Hat gerade ein Angebot im Gebrauchtmarkt, das beim Deaktivieren verschwindet",
+    wMissingDeps: "Braucht {x}, im Spielstand aber nicht aktiv", wUsedNotActive: "Im Spielstand benutzt, aber nicht aktiv: Objekte gehen beim nächsten Speichern verloren",
+    wUsedMissing: "Im Spielstand benutzt, aber die Mod-Datei fehlt: Objekte gehen beim nächsten Speichern verloren",
+    wUsedNotInFolder: "Im Spielstand benutzt, liegt aber nicht im Mods-Ordner dieses Spielstands",
+    eBlockedUsed: "Diese Mods werden im Spielstand benutzt oder sind gesperrt und werden nicht deaktiviert: {x}",
+    eBlockedDeps: "Diese Mods werden von aktiv bleibenden Mods als Abhängigkeit gebraucht: {x}", eSgUnreadable: "Spielstand nicht lesbar: {x}",
+    eArchiveExists: "Im Archiv liegt schon ein Eintrag mit diesem Namen: {x}", eSourceGone: "Quelle nicht mehr vorhanden: {x}"
+  },
+  en: {
+    brandSub: "What your savegame really uses", savegames: "Savegames", loadingSg: "Loading savegame",
+    search: "Search mods", history: "History", gameRunningHint: "The game is running. Please close it first.", clearSel: "Clear selection",
+    disableBtn: "Disable in savegame", cancel: "Cancel", disable: "Disable", folderTitle: "Clean up mods folder",
+    folderOkDefault: "Remove from folder", close: "Close", lostTitle: "Connection lost",
+    lostText: "The background service has stopped. Please restart Mod Inventur.",
+    gUnused: "Unused", gUnusedDesc: "Active, but nothing from these mods stands, drives or is stored in this savegame. Safe candidates to disable.",
+    gScript: "Scripts", gScriptDesc: "Scripts don't place anything, so their use can't be measured. You decide here. A badge shows whether a script has stored its own data in the savegame.",
+    gUsed: "Used", gUsedDesc: "Buildings, vehicles or objects from these mods are in the savegame. Protected.",
+    gIndirect: "Indirect", gIndirectDesc: "Nothing placed, but a fill type from this mod is stored in the savegame. Protected.",
+    gDep: "Dependency", gDepDesc: "Required by a used mod, an active script or the map. Protected.",
+    gOther: "Other", gOtherDesc: "The map itself, official DLCs, permanently locked mods like Precision Farming and active mods that are not in this savegame's mods folder. All protected.",
+    all: "All", modsN: "{n} mods", modsN1: "1 mod", tagShop1: "1 shop item", playtime: "{h} h played", activeMods: "{n} active mods", unusedLbl: "Unused mods",
+    unusedSize: "{s} loaded for nothing", compoHead: "Breakdown of the {n} active mods", tagShop: "{n} shop items",
+    tagData: "Data in savegame", tagScripts: "contains scripts", tagInactive: "not active", protected: "Protected",
+    gameRunTitle: "The game is running", gameRunText: "You can look around, but changes are only possible after closing it. Otherwise the game overwrites them on its next save.",
+    unknownTitle: "{n} active mods are not in the mods folder",
+    unknownText: "This savegame probably uses a different mods folder than the one currently set in the game, so the result is incomplete. Set the matching mods folder in the game and restart Mod Inventur.",
+    warnTitle1: "1 mod needs attention", warnTitleN: "{n} mods need attention",
+    warnText: "Otherwise objects are lost on the next save or the game complains about missing dependencies.",
+    selectAll: "Select all", selectNone: "Select none", emptyTitle: "Nothing found", emptyText: "No mod matches the filter and search.",
+    sel1: "1 mod selected", selN: "{n} mods selected", modalTitle1: "Disable 1 mod?", modalTitleN: "Disable {n} mods?",
+    modalText: "This savegame will no longer load them. A backup is made first, and you can bring back any mod individually from the history.",
+    modalScriptsHead: "{n} of them are scripts.", modalScriptsText: " Their data stays in the savegame and takes effect again once you bring them back.",
+    choiceFiles: "What should happen to the mod files?", optRemoveTitle: "Also remove from the mods folder",
+    optRemoveText: "Links are removed, the file stays in your library. Real files are moved to an archive folder{archive}.{shared}",
+    optShared: " Anything another savegame using this folder still has active stays.",
+    optKeepTitle: "Keep in the mods folder", optKeepText: "Only switch them off in the savegame. The game still reads the files at startup.",
+    toastDisabled: "{n} mods disabled in the savegame", toastDisabledFolder: ", {n} of them removed from the mods folder",
+    toastKept: " ({n} stay because they are still needed)", histEmptyTitle: "Nothing disabled yet",
+    histEmptyText: "Everything you switch off in this savegame appears here.", histFolder: "Removed from the mods folder",
+    mismatchTitle: "This savegame belongs to a different mods folder", mismatchText: "The game is currently set to {folder} as its mods folder, but this savegame's map is not in it. Mod Inventur therefore can't check it. Set the matching mods folder in the game and restart Mod Inventur.", otherFolder: "other mods folder", eMismatch: "This savegame belongs to a different mods folder than the one currently set in the game.",
+    histSg: "Disabled in the savegame", histBoth: "Disabled and removed from the mods folder", undone: "restored", toastUndone: "{n} mods restored", backInFolder: "back in folder", backActive: "active again", putBack: "Put back",
+    restore: "Restore", restoreAll: "Restore all",
+    gameStillRunning: "The game is still running. Please close it first.", toastBackFolder: "{n} mods back in the mods folder",
+    failedN: ", {n} failed", toastBackActive: "{n} mods active again", loadErrTitle: "Savegame could not be read",
+    folderErr: "Mods folder could not be read: ", kindKarte: "Map folder from ModManager",
+    kindGame: "Mods folder currently used by the game", segUsed: "Needed", segUnused: "Loaded by no savegame",
+    folderHead: "Mods folder: {n} mods, {s}", sharedBy: "Also used by {names}. Whatever is active there stays in the folder.",
+    folderSmall: "{n} mods no savegame loads", folderBtn: "Clean up folder", folderDone: "Folder only contains what is needed",
+    readingMods: "Reading mods …",
+    fLinks: "<b>{n}</b> of them are just links. Only the link is removed, the file stays in your mod library.",
+    fCopies: "<b>{n}</b> are real files that only exist here. Choose below what should happen to them.",
+    fText: "These mods are in the mods folder, but no savegame using this folder loads them. The game still reads every single one at startup.",
+    realFiles: "Real files", optMoveTitle: "Move to an archive folder", optMoveText: "Can be restored at any time from the history. Target: {path}",
+    optLeaveTitle: "Leave in the mods folder", optLeaveText: "Only links are removed, real files stay untouched.",
+    scopedNote: "ModManager will then no longer fill this map folder with your entire library automatically, only with what the savegames on this map need.",
+    kindLink: "link", kindCopy: "real file", pickedOf: "{a} of {b} selected", fOkN: "Remove {n} mods from the folder · {s}",
+    nothing: "Nothing to do", toastFolderClean: "{n} mods removed from the mods folder", skippedN: ", {n} skipped", errorN: "Error {n}",
+    rLocked: "Always locked, keeps the soil maps for all fields in the savegame", rMap: "Map of this savegame",
+    rPlaced: "{n} in {file}: {labels}", rRefs: "{n} references in vehicle and object data",
+    rFill: "Fill type {ft} with {l} l in stock ({files})", rNeededBy: "required by {x}", rDlc: "Official DLC, managed by the game itself",
+    rModDescBad: "modDesc.xml not readable", rNotFound: "Not found in the mods folder or the library",
+    rMixedData: "{n} shop items unused, but the mod's scripts have data in the savegame", rOwnData: "Own data in the savegame: {x}",
+    rElemData: "Data on vehicles and objects: {x}", rNothingBought: "Nothing from it bought or placed",
+    rUsedMarket: "Currently has an offer in the used equipment shop that disappears when disabled",
+    wMissingDeps: "Requires {x}, which is not active in the savegame", wUsedNotActive: "Used in the savegame but not active: objects will be lost on the next save",
+    wUsedMissing: "Used in the savegame but the mod file is missing: objects will be lost on the next save",
+    wUsedNotInFolder: "Used in the savegame but not in this savegame's mods folder",
+    eBlockedUsed: "These mods are used in the savegame or locked and will not be disabled: {x}",
+    eBlockedDeps: "These mods are required as dependencies by mods that stay active: {x}", eSgUnreadable: "Savegame not readable: {x}",
+    eArchiveExists: "The archive already contains an item with this name: {x}", eSourceGone: "Source no longer exists: {x}"
+  },
+  fr: {
+    brandSub: "Ce que votre partie utilise vraiment", savegames: "Parties", loadingSg: "Chargement de la partie",
+    search: "Rechercher un mod", history: "Historique", gameRunningHint: "Le jeu est en cours. Veuillez d'abord le fermer.", clearSel: "Effacer la sélection",
+    disableBtn: "Désactiver dans la partie", cancel: "Annuler", disable: "Désactiver", folderTitle: "Nettoyer le dossier de mods",
+    folderOkDefault: "Retirer du dossier", close: "Fermer", lostTitle: "Connexion perdue",
+    lostText: "Le service en arrière-plan s'est arrêté. Veuillez redémarrer Mod Inventur.",
+    gUnused: "Inutilisés", gUnusedDesc: "Actifs, mais rien de ces mods n'est posé, ne roule ou n'est stocké dans cette partie. Candidats sûrs à la désactivation.",
+    gScript: "Scripts", gScriptDesc: "Les scripts ne posent rien, leur utilisation ne peut donc pas être mesurée. C'est à vous de décider. Un badge indique si un script a enregistré ses propres données dans la partie.",
+    gUsed: "Utilisés", gUsedDesc: "Des bâtiments, véhicules ou objets de ces mods se trouvent dans la partie. Protégés.",
+    gIndirect: "Indirects", gIndirectDesc: "Rien n'est posé, mais un type de remplissage de ce mod est en stock dans la partie. Protégés.",
+    gDep: "Dépendances", gDepDesc: "Requis par un mod utilisé, un script actif ou la carte. Protégés.",
+    gOther: "Autres", gOtherDesc: "La carte elle-même, les DLC officiels, les mods verrouillés en permanence comme Precision Farming et les mods actifs absents du dossier de mods de cette partie. Tous protégés.",
+    all: "Tous", modsN: "{n} mods", modsN1: "1 mod", tagShop1: "1 article de boutique", playtime: "{h} h de jeu", activeMods: "{n} mods actifs", unusedLbl: "Mods inutilisés",
+    unusedSize: "{s} chargés pour rien", compoHead: "Répartition des {n} mods actifs", tagShop: "{n} articles de boutique",
+    tagData: "Données dans la partie", tagScripts: "contient des scripts", tagInactive: "inactif", protected: "Protégé",
+    gameRunTitle: "Le jeu est en cours", gameRunText: "Vous pouvez consulter, mais les modifications ne sont possibles qu'après sa fermeture. Sinon le jeu les écrase à la prochaine sauvegarde.",
+    unknownTitle: "{n} mods actifs ne sont pas dans le dossier de mods",
+    unknownText: "Cette partie utilise probablement un autre dossier de mods que celui actuellement réglé dans le jeu, le résultat est donc incomplet. Réglez le bon dossier de mods dans le jeu et redémarrez Mod Inventur.",
+    warnTitle1: "1 mod requiert votre attention", warnTitleN: "{n} mods requièrent votre attention",
+    warnText: "Sinon des objets seront perdus à la prochaine sauvegarde ou le jeu signalera des dépendances manquantes.",
+    selectAll: "Tout sélectionner", selectNone: "Ne rien sélectionner", emptyTitle: "Aucun résultat", emptyText: "Aucun mod ne correspond au filtre et à la recherche.",
+    sel1: "1 mod sélectionné", selN: "{n} mods sélectionnés", modalTitle1: "Désactiver 1 mod ?", modalTitleN: "Désactiver {n} mods ?",
+    modalText: "Cette partie ne les chargera plus. Une sauvegarde est créée au préalable et l'historique permet de rétablir chaque mod individuellement.",
+    modalScriptsHead: "{n} d'entre eux sont des scripts.", modalScriptsText: " Leurs données restent dans la partie et reprennent effet dès que vous les rétablissez.",
+    choiceFiles: "Que faire des fichiers des mods ?", optRemoveTitle: "Les retirer aussi du dossier de mods",
+    optRemoveText: "Les liens sont supprimés, le fichier reste dans votre bibliothèque. Les vrais fichiers sont déplacés dans un dossier d'archive{archive}.{shared}",
+    optShared: " Ce qu'une autre partie utilisant ce dossier a encore d'actif reste en place.",
+    optKeepTitle: "Les laisser dans le dossier de mods", optKeepText: "Les désactiver uniquement dans la partie. Le jeu continue de lire les fichiers au démarrage.",
+    toastDisabled: "{n} mods désactivés dans la partie", toastDisabledFolder: ", dont {n} retirés du dossier de mods",
+    toastKept: " ({n} restent car ils sont encore nécessaires)", histEmptyTitle: "Rien de désactivé pour l'instant",
+    histEmptyText: "Tout ce que vous désactivez dans cette partie apparaît ici.", histFolder: "Retirés du dossier de mods",
+    mismatchTitle: "Cette partie appartient à un autre dossier de mods", mismatchText: "Le jeu utilise actuellement {folder} comme dossier de mods, mais la carte de cette partie ne s'y trouve pas. Mod Inventur ne peut donc pas la vérifier. Réglez le bon dossier de mods dans le jeu et redémarrez Mod Inventur.", otherFolder: "autre dossier de mods", eMismatch: "Cette partie appartient à un autre dossier de mods que celui actuellement réglé dans le jeu.",
+    histSg: "Désactivés dans la partie", histBoth: "Désactivés et retirés du dossier de mods", undone: "rétabli", toastUndone: "{n} mods rétablis", backInFolder: "de retour dans le dossier", backActive: "de nouveau actif", putBack: "Remettre",
+    restore: "Rétablir", restoreAll: "Tout rétablir",
+    gameStillRunning: "Le jeu est encore en cours. Veuillez d'abord le fermer.", toastBackFolder: "{n} mods de retour dans le dossier de mods",
+    failedN: ", {n} en échec", toastBackActive: "{n} mods de nouveau actifs", loadErrTitle: "Impossible de lire la partie",
+    folderErr: "Impossible de lire le dossier de mods : ", kindKarte: "Dossier de carte du ModManager",
+    kindGame: "Dossier de mods actuellement utilisé par le jeu", segUsed: "Nécessaires", segUnused: "Chargés par aucune partie",
+    folderHead: "Dossier de mods : {n} mods, {s}", sharedBy: "Également utilisé par {names}. Ce qui y est actif reste dans le dossier.",
+    folderSmall: "{n} mods chargés par aucune partie", folderBtn: "Nettoyer le dossier", folderDone: "Le dossier ne contient que le nécessaire",
+    readingMods: "Lecture des mods …",
+    fLinks: "<b>{n}</b> d'entre eux ne sont que des liens. Seul le lien est supprimé, le fichier reste dans votre bibliothèque de mods.",
+    fCopies: "<b>{n}</b> sont de vrais fichiers présents uniquement ici. Choisissez ci-dessous ce qu'il faut en faire.",
+    fText: "Ces mods se trouvent dans le dossier de mods, mais aucune partie utilisant ce dossier ne les charge. Le jeu les lit pourtant tous au démarrage.",
+    realFiles: "Vrais fichiers", optMoveTitle: "Déplacer dans un dossier d'archive", optMoveText: "Rétablissable à tout moment via l'historique. Destination : {path}",
+    optLeaveTitle: "Laisser dans le dossier de mods", optLeaveText: "Seuls les liens sont supprimés, les vrais fichiers restent intacts.",
+    scopedNote: "Le ModManager ne remplira plus automatiquement ce dossier de carte avec toute la bibliothèque, mais seulement avec ce dont les parties de cette carte ont besoin.",
+    kindLink: "lien", kindCopy: "vrai fichier", pickedOf: "{a} sur {b} sélectionnés", fOkN: "Retirer {n} mods du dossier · {s}",
+    nothing: "Rien à faire", toastFolderClean: "{n} mods retirés du dossier de mods", skippedN: ", {n} ignorés", errorN: "Erreur {n}",
+    rLocked: "Toujours verrouillé, gère les cartes de sol de tous les champs de la partie", rMap: "Carte de cette partie",
+    rPlaced: "{n} dans {file} : {labels}", rRefs: "{n} références dans les données de véhicules et d'objets",
+    rFill: "Type de remplissage {ft} avec {l} l en stock ({files})", rNeededBy: "requis par {x}", rDlc: "DLC officiel, géré par le jeu lui-même",
+    rModDescBad: "modDesc.xml illisible", rNotFound: "Introuvable dans le dossier de mods et dans la bibliothèque",
+    rMixedData: "{n} articles de boutique inutilisés, mais les scripts du mod ont des données dans la partie", rOwnData: "Données propres dans la partie : {x}",
+    rElemData: "Données sur les véhicules et objets : {x}", rNothingBought: "Rien n'a été acheté ni posé",
+    rUsedMarket: "A actuellement une offre sur le marché d'occasion qui disparaîtra à la désactivation",
+    wMissingDeps: "Nécessite {x}, qui n'est pas actif dans la partie", wUsedNotActive: "Utilisé dans la partie mais inactif : des objets seront perdus à la prochaine sauvegarde",
+    wUsedMissing: "Utilisé dans la partie mais le fichier du mod est absent : des objets seront perdus à la prochaine sauvegarde",
+    wUsedNotInFolder: "Utilisé dans la partie mais absent du dossier de mods de cette partie",
+    eBlockedUsed: "Ces mods sont utilisés dans la partie ou verrouillés et ne seront pas désactivés : {x}",
+    eBlockedDeps: "Ces mods sont requis comme dépendances par des mods qui restent actifs : {x}", eSgUnreadable: "Partie illisible : {x}",
+    eArchiveExists: "L'archive contient déjà un élément portant ce nom : {x}", eSourceGone: "La source n'existe plus : {x}"
+  }
+};
+const LOCALES = { de: "de-DE", en: "en-GB", fr: "fr-FR" };
+const UNITS = { de: ["MB", "GB"], en: ["MB", "GB"], fr: ["Mo", "Go"] };
+let LANG = "de";
+
+function t(key, vars) {
+  const s = (I18N[LANG] && I18N[LANG][key]) || I18N.de[key] || key;
+  return vars ? s.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m)) : s;
+}
+
+const ENGINE_PATTERNS = [
+  [/^immer gesperrt, fuehrt Bodenkarten fuer alle Felder im Spielstand$/, "rLocked"],
+  [/^Karte dieses Spielstands$/, "rMap"],
+  [/^(\d+) in (\S+\.xml): (.*)$/, "rPlaced", m => ({ n: m[1], file: m[2], labels: m[3] })],
+  [/^(\d+) Verweise in Fahrzeug\/Objektdaten$/, "rRefs", m => ({ n: m[1] })],
+  [/^Fuelltyp (\S+) mit (\d+) l Bestand \((.*)\)$/, "rFill", m => ({ ft: m[1], l: fmt(m[2]), files: m[3] })],
+  [/^benoetigt von (.+)$/, "rNeededBy", m => ({ x: m[1] })],
+  [/^offizieller DLC, wird vom Spiel selbst verwaltet$/, "rDlc"],
+  [/^modDesc\.xml nicht lesbar$/, "rModDescBad"],
+  [/^nicht im Kartenordner und nicht in der Bibliothek gefunden$/, "rNotFound"],
+  [/^(\d+) Shop-Artikel ungenutzt, aber die Scripts des Mods haben Daten im Spielstand$/, "rMixedData", m => ({ n: m[1] })],
+  [/^eigene Daten im Spielstand: (.*)$/, "rOwnData", m => ({ x: m[1] })],
+  [/^Daten an Fahrzeugen\/Objekten: (.*)$/, "rElemData", m => ({ x: m[1] })],
+  [/^\d+ Shop-Artikel, keiner davon im Spielstand$/, "rNothingBought"],
+  [/^hat gerade ein Angebot im Gebrauchtmarkt, das beim Deaktivieren verschwindet$/, "rUsedMarket"],
+  [/^braucht (.+), im Spielstand aber nicht aktiv$/, "wMissingDeps", m => ({ x: m[1] })],
+  [/^im Spielstand benutzt, aber nicht aktiv: Objekte gehen beim naechsten Speichern verloren$/, "wUsedNotActive"],
+  [/^im Spielstand benutzt, aber Mod-Datei fehlt: Objekte gehen beim naechsten Speichern verloren$/, "wUsedMissing"],
+  [/^im Spielstand benutzt, liegt aber nicht im Mods-Ordner dieses Spielstands$/, "wUsedNotInFolder"],
+  [/^Das Spiel laeuft noch\./, "gameStillRunning"],
+  [/^Diese Mods werden im Spielstand benutzt oder sind gesperrt und werden nicht deaktiviert: (.*)$/, "eBlockedUsed", m => ({ x: m[1] })],
+  [/^Diese Mods werden von aktiv bleibenden Mods als Abhaengigkeit gebraucht: (.*)$/, "eBlockedDeps", m => ({ x: m[1] })],
+  [/^Spielstand nicht lesbar: (.*)$/, "eSgUnreadable", m => ({ x: m[1] })],
+  [/^Im Archiv liegt schon (?:eine Datei|ein Ordner) mit diesem Namen: (.*)$/, "eArchiveExists", m => ({ x: m[1] })],
+  [/^Quelle nicht mehr vorhanden: (.*)$/, "eSourceGone", m => ({ x: m[1] })],
+  [/^Dieser Spielstand gehoert zu einem anderen Mods-Ordner/, "eMismatch"]
+];
+function tEngine(text) {
+  const s = String(text ?? "");
+  for (const [re, key, fn] of ENGINE_PATTERNS) {
+    const m = s.match(re);
+    if (m) return t(key, fn ? fn(m) : null);
+  }
+  return s;
+}
+
+const GROUPS = [
+  { key: "Unbenutzt", label: "gUnused", desc: "gUnusedDesc", color: "var(--s-unused)", pick: true },
+  { key: "Script", label: "gScript", desc: "gScriptDesc", color: "var(--s-script)", pick: true },
+  { key: "Benutzt", label: "gUsed", desc: "gUsedDesc", color: "var(--s-used)", pick: false },
+  { key: "Indirekt", label: "gIndirect", desc: "gIndirectDesc", color: "var(--s-indirect)", pick: false },
+  { key: "Abhaengigkeit", label: "gDep", desc: "gDepDesc", color: "var(--s-dep)", pick: false },
+  { key: "Sonstige", label: "gOther", desc: "gOtherDesc", color: "var(--s-other)", pick: false, members: ["Karte", "DLC", "Gesperrt", "Unbekannt"] }
+];
+const groupOf = s => (GROUPS.find(g => g.members ? g.members.includes(s) : g.key === s) || GROUPS[5]);
+const pickable = m => !(state.usage && state.usage.FolderMismatch) && ["Unbenutzt", "Script"].includes(m.Status);
+
+const state = { savegames: [], sg: null, usage: null, selected: new Set(), filter: "all", query: "", gameRunning: false,
+  folder: null, folderDetail: null, folderPick: new Set(), fileAction: "remove", copyAction: "Move" };
+const CHECK_SVG = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1a1204" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>';
+const kindLabel = k => (k === "Kopie" ? t("kindCopy") : t("kindLink"));
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = n => Number(n).toLocaleString(LOCALES[LANG]);
+const fmtSize = mb => mb >= 1024 ? (mb / 1024).toLocaleString(LOCALES[LANG], { maximumFractionDigits: 1 }) + " " + UNITS[LANG][1] : Math.round(mb).toLocaleString(LOCALES[LANG]) + " " + UNITS[LANG][0];
+const tn = (key, n) => (Number(n) === 1 && I18N[LANG][key + "1"] ? t(key + "1") : t(key, { n: fmt(n) }));
+const iconUrl = (name, sg) => `/icon/${encodeURIComponent(name)}?sg=${encodeURIComponent(sg)}&t=${token}`;
+const mono = s => esc((s || "?").replace(/^FS25_/i, "").replace(/[^A-Za-zÄÖÜäöü0-9]/g, "").slice(0, 2).toUpperCase());
+
+function applyStaticTexts() {
+  document.documentElement.lang = LANG;
+  document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
+  $("search").placeholder = t("search");
+  $("drawerClose").setAttribute("aria-label", t("close"));
+  if (!state.usage) $("heroTitle").textContent = t("loadingSg");
+}
+
+async function api(path, body) {
+  const opt = { headers: { "X-Token": token } };
+  if (body) { opt.method = "POST"; opt.body = JSON.stringify(body); opt.headers["Content-Type"] = "application/json"; }
+  const r = await fetch(path, opt);
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(tEngine(data.error) || t("errorN", { n: r.status }));
+  return data;
+}
+
+function iconHtml(name, title, has, sg) {
+  if (!has) return `<div class="ico">${mono(title || name)}</div>`;
+  return `<div class="ico"><img loading="lazy" src="${iconUrl(name, sg)}" alt="" onerror="this.parentNode.textContent='${mono(title || name)}'"></div>`;
+}
+
+function toast(msg, err) {
+  const el = $("toast");
+  el.className = "toast" + (err ? " err" : "");
+  el.innerHTML = (err
+    ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d03b3b" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>'
+    : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0ca30c" stroke-width="2.4" stroke-linecap="round"><path d="m5 12 5 5 9-10"/></svg>') + `<span>${esc(msg)}</span>`;
+  requestAnimationFrame(() => el.classList.add("show"));
+  clearTimeout(toast.h);
+  toast.h = setTimeout(() => el.classList.remove("show"), 4200);
+}
+
+function renderSavegames() {
+  $("sgList").innerHTML = state.savegames.map(s => {
+    const d = s.SaveDate ? new Date(s.SaveDate).toLocaleDateString(LOCALES[LANG], { day: "2-digit", month: "2-digit", year: "2-digit" }) : "";
+    return `<button class="sg${s.Id === state.sg ? " active" : ""}${s.OtherFolder ? " other" : ""}" data-id="${esc(s.Id)}">
+      <div class="sg-thumb">${s.MapModName ? `<img loading="lazy" src="${iconUrl(s.MapModName, s.Id)}" alt="" onerror="this.remove()">` : ""}</div>
+      <div style="min-width:0">
+        <div class="sg-name">${esc(s.Name || s.Id)}</div>
+        <div class="sg-map">${esc(s.MapTitle || "")}</div>
+        <div class="sg-meta">${s.OtherFolder ? `<span class="sg-other">${t("otherFolder")}</span>` : `<span>${tn("modsN", s.ActiveMods)}</span><span>${esc(d)}</span>`}</div>
+      </div>
+    </button>`;
+  }).join("");
+  document.querySelectorAll(".sg").forEach(b => b.onclick = () => selectSavegame(b.dataset.id));
+}
+
+function renderLoading() {
+  $("heroCover").className = "hero-cover skel";
+  $("heroCover").innerHTML = "";
+  $("heroStat").innerHTML = "";
+  $("heroBg").classList.remove("loaded");
+  $("compo").innerHTML = `<div class="skel" style="height:14px;margin-top:34px"></div>`;
+  $("folderPanel").innerHTML = "";
+  $("chips").innerHTML = "";
+  $("content").innerHTML = `<div class="grid" style="margin-top:30px">${Array.from({ length: 9 }, () => '<div class="skel" style="height:118px"></div>').join("")}</div>`;
+}
+
+function renderHero() {
+  const u = state.usage;
+  const sg = state.savegames.find(s => s.Id === u.Id) || {};
+  $("heroEyebrow").textContent = `${u.Id} · ${u.MapTitle || ""}`;
+  $("heroTitle").textContent = u.Name || u.Id;
+  const meta = [];
+  if (sg.FarmName) meta.push(["M3 21h18M5 21V10l7-5 7 5v11M9 21v-6h6v6", sg.FarmName]);
+  meta.push(["M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0", t("playtime", { h: fmt(u.PlayTimeHours) })]);
+  meta.push(["M4 6h16M4 12h16M4 18h10", t("activeMods", { n: fmt(u.Mods.filter(m => m.Active).length) })]);
+  if (u.KarteName && !u.FolderMismatch) meta.push(["M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z", u.KarteName]);
+  $("heroMeta").innerHTML = meta.map(([d, txt]) => `<span class="pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>${esc(txt)}</span>`).join("");
+
+  const bg = $("heroBg");
+  if (u.MapModName) {
+    bg.onload = () => bg.classList.add("loaded");
+    bg.src = iconUrl(u.MapModName, u.Id);
+    $("heroCover").className = "hero-cover";
+    $("heroCover").innerHTML = `<img src="${iconUrl(u.MapModName, u.Id)}" alt="" onerror="this.remove()">`;
+  }
+
+  const unused = u.Mods.filter(m => m.Status === "Unbenutzt");
+  const size = unused.reduce((a, m) => a + (m.SizeMB || 0), 0);
+  $("heroStat").innerHTML = `<div class="num">${fmt(unused.length)}</div><div class="lbl">${t("unusedLbl")}</div>${size ? `<div class="sub">${t("unusedSize", { s: fmtSize(size) })}</div>` : ""}`;
+
+  const active = u.Mods.filter(m => m.Active);
+  const counts = GROUPS.map(g => ({ g, mods: active.filter(m => groupOf(m.Status) === g) })).filter(x => x.mods.length);
+  $("compo").innerHTML = `
+    <div class="compo-head"><span>${t("compoHead", { n: fmt(active.length) })}</span></div>
+    <div class="bar">${counts.map((x, i) => `<div class="seg" data-g="${x.g.key}" style="flex:${x.mods.length};background:${x.g.color};animation-delay:${i * 60}ms"></div>`).join("")}</div>
+    <div class="legend">${counts.map(x => `<button data-g="${x.g.key}"><span class="sw" style="background:${x.g.color}"></span>${t(x.g.label)} <b>${fmt(x.mods.length)}</b></button>`).join("")}</div>`;
+  const tip = $("tooltip");
+  $("compo").querySelectorAll(".seg").forEach(s => {
+    const x = counts.find(c => c.g.key === s.dataset.g);
+    const mb = x.mods.reduce((a, m) => a + (m.SizeMB || 0), 0);
+    s.onmousemove = e => {
+      tip.innerHTML = `<div class="t"><span style="width:9px;height:9px;border-radius:3px;background:${x.g.color}"></span>${t(x.g.label)}</div><div class="d">${tn("modsN", x.mods.length)} · ${Math.round(x.mods.length / active.length * 100)} % · ${fmtSize(mb)}</div>`;
+      tip.style.left = (e.clientX + 14) + "px";
+      tip.style.top = (e.clientY + 14) + "px";
+      tip.classList.add("show");
+    };
+    s.onmouseleave = () => tip.classList.remove("show");
+    s.onclick = () => setFilter(x.g.key);
+  });
+  $("compo").querySelectorAll(".legend button").forEach(b => b.onclick = () => setFilter(b.dataset.g));
+}
+
+function setFilter(f) {
+  state.filter = state.filter === f ? "all" : f;
+  renderChips();
+  renderGroups();
+  const heroH = $("hero").offsetHeight;
+  if ($("main").scrollTop < heroH) $("main").scrollTop = heroH;
+}
+
+function renderChips() {
+  const u = state.usage;
+  const items = [{ key: "all", label: t("all"), n: u.Mods.length }].concat(
+    GROUPS.map(g => ({ key: g.key, label: t(g.label), color: g.color, n: u.Mods.filter(m => groupOf(m.Status) === g).length })).filter(x => x.n)
+  );
+  $("chips").innerHTML = items.map(x => `<button class="chip${state.filter === x.key ? " on" : ""}" data-k="${x.key}">${x.color ? `<span class="dot" style="background:${x.color}"></span>` : ""}${x.label} <span class="n">${fmt(x.n)}</span></button>`).join("");
+  document.querySelectorAll(".chip").forEach(c => c.onclick = () => { state.filter = c.dataset.k; renderChips(); renderGroups(); });
+  const h = u.History.length;
+  $("histCount").hidden = !h;
+  $("histCount").textContent = h;
+}
+
+function cardHtml(m, g) {
+  const canPick = pickable(m);
+  const sel = state.selected.has(m.Name);
+  const tags = [];
+  if (m.Version) tags.push(`<span class="tag">v${esc(m.Version)}</span>`);
+  if (m.SizeMB) tags.push(`<span class="tag">${fmtSize(m.SizeMB)}</span>`);
+  if (m.StoreItemCount) tags.push(`<span class="tag">${tn("tagShop", m.StoreItemCount)}</span>`);
+  if (m.Status === "Script" && m.Reasons.some(r => r.startsWith("eigene Daten") || r.startsWith("Daten an"))) tags.push(`<span class="tag data">${t("tagData")}</span>`);
+  if (m.Status === "Unbenutzt" && m.HasScripts) tags.push(`<span class="tag warn">${t("tagScripts")}</span>`);
+  if (!m.Active) tags.push(`<span class="tag warn">${t("tagInactive")}</span>`);
+  const reasons = m.Reasons.filter(r => !r.startsWith("enthaelt zusaetzlich") && !r.startsWith("keine eigenen Daten"));
+  return `<div class="card${canPick ? " pick" : ""}${sel ? " sel" : ""}" data-n="${esc(m.Name)}">
+    <span class="stripe" style="background:${g.color}"></span>
+    ${iconHtml(m.Name, m.Title, m.HasIcon, state.usage.Id)}
+    <div class="card-body">
+      <div class="card-title" title="${esc(m.Title)}">${esc(m.Title)}</div>
+      <div class="card-name">${esc(m.Name)}${m.Author ? " · " + esc(m.Author) : ""}</div>
+      ${tags.length ? `<div class="tags">${tags.join("")}</div>` : ""}
+      ${reasons.length ? `<ul class="reasons">${reasons.map(r => `<li>${esc(tEngine(r))}</li>`).join("")}</ul>` : ""}
+    </div>
+    ${canPick
+      ? `<span class="check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1a1204" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg></span>`
+      : `<span class="lock" title="${t("protected")}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>`}
+  </div>`;
+}
+
+function renderGroups() {
+  const u = state.usage;
+  const q = state.query.trim().toLowerCase();
+  const warn = u.Mods.filter(m => m.Warning);
+  let html = "";
+  if (u.GameRunning) html += `<div class="alert warn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fab219" stroke-width="2" stroke-linecap="round"><path d="M12 3 2 21h20L12 3zM12 10v5M12 18h.01"/></svg><div><strong>${t("gameRunTitle")}</strong>${t("gameRunText")}</div></div>`;
+  if (u.FolderMismatch) html += `<div class="alert info"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3987e5" stroke-width="2" stroke-linecap="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><div><strong>${t("mismatchTitle")}</strong>${t("mismatchText", { folder: `<code>${esc(u.ModsFolder || "")}</code>` })}</div></div>`;
+  const unknown = u.FolderMismatch ? [] : u.Mods.filter(m => m.Status === "Unbekannt" && m.Active);
+  if (unknown.length >= 5 && unknown.length >= u.Mods.filter(m => m.Active).length / 4) html += `<div class="alert warn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fab219" stroke-width="2" stroke-linecap="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><div><strong>${t("unknownTitle", { n: fmt(unknown.length) })}</strong>${t("unknownText")}</div></div>`;
+  if (warn.length) html += `<div class="alert"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d03b3b" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><div><strong>${warn.length === 1 ? t("warnTitle1") : t("warnTitleN", { n: fmt(warn.length) })}</strong>${t("warnText")}<ul>${warn.map(m => `<li><b>${esc(m.Title)}</b>: ${esc(tEngine(m.Warning))}</li>`).join("")}</ul></div></div>`;
+
+  let any = false;
+  for (const g of GROUPS) {
+    if (state.filter !== "all" && state.filter !== g.key) continue;
+    let mods = u.Mods.filter(m => groupOf(m.Status) === g);
+    if (q) mods = mods.filter(m => (m.Title + " " + m.Name + " " + (m.Author || "")).toLowerCase().includes(q));
+    if (!mods.length) continue;
+    any = true;
+    mods.sort((a, b) => g.key === "Unbenutzt" ? (b.SizeMB-a.SizeMB) : a.Title.localeCompare(b.Title, LANG));
+    const pickIds = mods.filter(pickable).map(m => m.Name);
+    const allSel = pickIds.length && pickIds.every(n => state.selected.has(n));
+    const compact = !g.pick;
+    html += `<section class="group${compact ? " compact" : ""}">
+      <div class="group-head">
+        <div>
+          <div class="group-title"><span class="sw" style="background:${g.color}"></span><h3>${t(g.label)}</h3><span class="count">${fmt(mods.length)}</span></div>
+          <p class="group-desc">${t(g.desc)}</p>
+        </div>
+        ${pickIds.length > 1 ? `<div class="group-actions"><button class="btn" data-all="${g.key}">${allSel ? t("selectNone") : t("selectAll")}</button></div>` : ""}
+      </div>
+      <div class="grid">${mods.map(m => cardHtml(m, g)).join("")}</div>
+    </section>`;
+  }
+  if (!any) html += `<div class="empty"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><h3>${t("emptyTitle")}</h3><p>${t("emptyText")}</p></div>`;
+  $("content").innerHTML = html;
+
+  document.querySelectorAll(".card.pick").forEach(c => c.onclick = () => {
+    const n = c.dataset.n;
+    state.selected.has(n) ? state.selected.delete(n) : state.selected.add(n);
+    c.classList.toggle("sel", state.selected.has(n));
+    renderActionbar();
+    refreshGroupButtons();
+  });
+  document.querySelectorAll("[data-all]").forEach(b => b.onclick = () => {
+    const cards = [...b.closest(".group").querySelectorAll(".card.pick")];
+    const all = cards.every(c => state.selected.has(c.dataset.n));
+    cards.forEach(c => { all ? state.selected.delete(c.dataset.n) : state.selected.add(c.dataset.n); c.classList.toggle("sel", !all); });
+    refreshGroupButtons();
+    renderActionbar();
+  });
+}
+
+function refreshGroupButtons() {
+  document.querySelectorAll("[data-all]").forEach(b => {
+    const cards = [...b.closest(".group").querySelectorAll(".card.pick")];
+    b.textContent = cards.length && cards.every(c => state.selected.has(c.dataset.n)) ? t("selectNone") : t("selectAll");
+  });
+}
+
+function renderActionbar() {
+  const n = state.selected.size;
+  const mods = state.usage ? state.usage.Mods.filter(m => state.selected.has(m.Name)) : [];
+  const mb = mods.reduce((a, m) => a + (m.SizeMB || 0), 0);
+  $("actionbar").classList.toggle("show", n > 0);
+  $("selCount").textContent = n === 1 ? t("sel1") : t("selN", { n: fmt(n) });
+  $("selSize").textContent = mb ? fmtSize(mb) : "";
+  $("selHint").hidden = !state.gameRunning;
+  $("selApply").disabled = state.gameRunning;
+}
+
+function optHtml(group, value, current, title, text) {
+  return `<label class="opt${current === value ? " on" : ""}" data-group="${group}" data-value="${value}"><input type="radio"><span class="radio"></span><div><b>${title}</b><span>${text}</span></div></label>`;
+}
+function bindOpts(container, onChange) {
+  container.querySelectorAll(".opt").forEach(o => o.onclick = () => {
+    container.querySelectorAll(`.opt[data-group="${o.dataset.group}"]`).forEach(x => x.classList.toggle("on", x === o));
+    onChange(o.dataset.group, o.dataset.value);
+  });
+}
+
+function openModal() {
+  const mods = state.usage.Mods.filter(m => state.selected.has(m.Name));
+  const scripts = mods.filter(m => m.Status === "Script").length;
+  $("modalTitle").textContent = mods.length === 1 ? t("modalTitle1") : t("modalTitleN", { n: fmt(mods.length) });
+  $("modalText").innerHTML = esc(t("modalText")) + (scripts ? `<br><br><b style="color:#ffd27a">${esc(t("modalScriptsHead", { n: fmt(scripts) }))}</b>${esc(t("modalScriptsText"))}` : "");
+  const archive = state.folder ? state.folder.ArchiveFolder : "";
+  const shared = state.folder && state.folder.Sharing.length > 1;
+  $("modalChoice").innerHTML = `<div class="choice-label">${t("choiceFiles")}</div>`
+    + optHtml("file", "remove", state.fileAction, t("optRemoveTitle"),
+      t("optRemoveText", { archive: archive ? `: <code>${esc(archive)}</code>` : "", shared: shared ? t("optShared") : "" }))
+    + optHtml("file", "keep", state.fileAction, t("optKeepTitle"), t("optKeepText"));
+  bindOpts($("modalChoice"), (g, v) => { state.fileAction = v; });
+  $("modalList").innerHTML = mods.map(m => `<div class="mini">${iconHtml(m.Name, m.Title, m.HasIcon, state.usage.Id)}<span class="nm">${esc(m.Title)}</span><span class="sz">${m.SizeMB ? fmtSize(m.SizeMB) : ""}</span></div>`).join("");
+  $("overlay").classList.add("show");
+  $("modal").classList.add("show");
+}
+function closeModal() { $("modal").classList.remove("show"); $("fmodal").classList.remove("show"); if (!$("drawer").classList.contains("show")) $("overlay").classList.remove("show"); }
+
+async function applyDisable() {
+  const mods = [...state.selected];
+  $("modalOk").disabled = true;
+  try {
+    const sg = state.usage.Id;
+    const r = await api("/api/disable", { sg, mods });
+    let msg = t("toastDisabled", { n: fmt(r.changed.length) });
+    if (state.fileAction === "remove" && r.changed.length) {
+      const c = await api("/api/folder/clean", { sg, mods: r.changed, copyAction: "Move" });
+      const kept = r.changed.length-c.removed.length;
+      msg += t("toastDisabledFolder", { n: fmt(c.removed.length) }) + (kept ? t("toastKept", { n: fmt(kept) }) : "");
+    }
+    closeModal();
+    state.selected.clear();
+    toast(msg);
+    await loadUsage(sg, true);
+  } catch (e) {
+    toast(e.message, true);
+  } finally {
+    $("modalOk").disabled = false;
+  }
+}
+
+function renderDrawer() {
+  const u = state.usage;
+  const hist = [...u.History].reverse();
+  if (!hist.length) {
+    $("drawerBody").innerHTML = `<div class="empty" style="padding:60px 10px"><h3>${t("histEmptyTitle")}</h3><p>${t("histEmptyText")}</p></div>`;
+    return;
+  }
+  const titles = { Both: "histBoth", Savegame: "histSg", Folder: "histFolder" };
+  $("drawerBody").innerHTML = hist.map(h => {
+    const open = h.Mods.filter(m => !m.Restored).map(m => m.Name);
+    const d = new Date(h.Date.replace(" ", "T"));
+    return `<div class="hist">
+      <div class="hist-head"><div><div class="hist-title">${t(titles[h.Kind] || "histSg")}</div><span>${d.toLocaleString(LOCALES[LANG], { dateStyle: "medium", timeStyle: "short" })} · ${tn("modsN", h.Mods.length)}</span></div>
+      ${open.length > 1 ? `<button class="btn" style="height:30px;font-size:12px" data-date="${esc(h.Date)}" data-restore='${esc(JSON.stringify(open))}'>${t("restoreAll")}</button>` : ""}</div>
+      ${h.Mods.map(m => `<div class="mini">${iconHtml(m.Name, m.Name, true, u.Id)}<span class="nm">${esc(m.Name)}</span>${m.Restored ? `<span class="restored">${t("undone")}</span>` : `<button class="btn" data-date="${esc(h.Date)}" data-restore='${esc(JSON.stringify([m.Name]))}'>${t("restore")}</button>`}</div>`).join("")}
+    </div>`;
+  }).join("");
+  document.querySelectorAll("[data-restore]").forEach(b => b.onclick = async () => {
+    if (state.gameRunning) { toast(t("gameStillRunning"), true); return; }
+    b.disabled = true;
+    try {
+      const r = await api("/api/undo", { sg: u.Id, date: b.dataset.date, mods: JSON.parse(b.dataset.restore) });
+      const failed = r.failed && r.failed.length ? r.failed.length : 0;
+      toast(t("toastUndone", { n: fmt(r.changed.length) }) + (failed ? t("failedN", { n: fmt(failed) }) : ""), failed > 0);
+      await loadUsage(u.Id, true);
+      renderDrawer();
+    } catch (e) { toast(e.message, true); b.disabled = false; }
+  });
+}
+
+async function loadUsage(id, keepScroll) {
+  const top = $("main").scrollTop;
+  if (!keepScroll) renderLoading();
+  try {
+    const u = await api(`/api/usage?sg=${encodeURIComponent(id)}`);
+    if (state.sg !== id) return;
+    state.usage = u;
+    state.gameRunning = u.GameRunning;
+    const s = state.savegames.find(x => x.Id === id);
+    if (s) { s.ActiveMods = u.Mods.filter(m => m.Active).length; renderSavegames(); }
+    renderHero();
+    renderChips();
+    renderGroups();
+    renderActionbar();
+    if (keepScroll) $("main").scrollTop = top;
+    if (u.FolderMismatch) $("folderPanel").innerHTML = ""; else loadFolder(id);
+  } catch (e) {
+    $("content").innerHTML = `<div class="empty"><h3>${t("loadErrTitle")}</h3><p>${esc(e.message)}</p></div>`;
+  }
+}
+
+async function loadFolder(id) {
+  if (!state.folder || state.folder.id !== id) $("folderPanel").innerHTML = `<div class="skel" style="height:118px;margin-top:22px;border-radius:16px"></div>`;
+  try {
+    const f = await api(`/api/folder?sg=${encodeURIComponent(id)}`);
+    if (state.sg !== id) return;
+    f.id = id;
+    state.folder = f;
+    renderFolderPanel();
+  } catch (e) {
+    $("folderPanel").innerHTML = "";
+    toast(t("folderErr") + e.message, true);
+  }
+}
+
+function renderFolderPanel() {
+  const f = state.folder;
+  const n = f.Candidates.length;
+  const mb = f.Candidates.reduce((a, c) => a + (c.SizeMB || 0), 0);
+  const others = f.Sharing.filter(s => s.Id !== state.sg);
+  const kindText = f.FolderKind === "Karte" ? t("kindKarte") : t("kindGame");
+  const segs = [
+    { label: t("segUsed"), n: f.KeptCount, mb: f.KeptMB, color: "var(--s-used)" },
+    { label: t("segUnused"), n, mb, color: "var(--s-unused)" }
+  ].filter(s => s.n);
+  $("folderPanel").innerHTML = `<div class="folder">
+    <div>
+      <div class="folder-head">
+        <div class="folder-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+        <div style="min-width:0"><h3>${t("folderHead", { n: fmt(f.TotalCount), s: fmtSize(f.TotalMB) })}</h3><div class="folder-path">${esc(kindText)} · ${esc(f.Folder)}</div></div>
+      </div>
+      <div class="bar">${segs.map((s, i) => `<div class="seg" style="flex:${s.n};background:${s.color};animation-delay:${i * 60}ms;cursor:default"></div>`).join("")}</div>
+      <div class="legend">${segs.map(s => `<button style="cursor:default"><span class="sw" style="background:${s.color}"></span>${s.label} <b>${fmt(s.n)}</b> · ${fmtSize(s.mb)}</button>`).join("")}</div>
+      ${others.length ? `<div class="share"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M14 20c0-2 1.5-4 4-4 1.5 0 3 1 3 3"/></svg>${t("sharedBy", { names: others.map(o => esc(o.Name || o.Id)).join(", ") })}</div>` : ""}
+    </div>
+    <div class="folder-side">
+      ${n ? `<div class="big">${fmtSize(mb)}</div><div class="small">${t("folderSmall", { n: fmt(n) })}</div>
+      <button class="btn primary" id="folderBtn" ${state.gameRunning ? "disabled" : ""}>${t("folderBtn")}</button>`
+      : `<div class="folder-done"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0ca30c" stroke-width="2.4" stroke-linecap="round"><path d="m5 12 5 5 9-10"/></svg>${t("folderDone")}</div>`}
+    </div>
+  </div>`;
+  if ($("folderBtn")) $("folderBtn").onclick = openFolderModal;
+}
+
+async function openFolderModal() {
+  $("fTitle").textContent = t("folderTitle");
+  $("fText").textContent = t("readingMods");
+  $("fChoice").innerHTML = "";
+  $("fListHead").innerHTML = "";
+  $("fList").innerHTML = Array.from({ length: 6 }, () => '<div class="skel" style="height:42px;border-radius:10px"></div>').join("");
+  $("fOk").disabled = true;
+  $("overlay").classList.add("show");
+  $("fmodal").classList.add("show");
+  try {
+    const d = await api(`/api/folder?sg=${encodeURIComponent(state.sg)}&detail=1`);
+    state.folderDetail = d;
+    state.folderPick = new Set(d.Candidates.map(c => c.Name));
+    renderFolderModal();
+  } catch (e) { closeModal(); toast(e.message, true); }
+}
+
+function renderFolderModal() {
+  const d = state.folderDetail;
+  const links = d.Candidates.filter(c => c.Kind !== "Kopie").length;
+  const copies = d.Candidates.filter(c => c.Kind === "Kopie").length;
+  const parts = [];
+  if (links) parts.push(t("fLinks", { n: fmt(links) }));
+  if (copies) parts.push(t("fCopies", { n: fmt(copies) }));
+  $("fText").innerHTML = `${esc(t("fText"))} ${parts.join(" ")}`;
+  let choice = "";
+  if (copies) {
+    choice += `<div class="choice-label">${t("realFiles")}</div>`
+      + optHtml("copy", "Move", state.copyAction, t("optMoveTitle"), t("optMoveText", { path: `<code>${esc(d.ArchiveFolder)}</code>` }))
+      + optHtml("copy", "Keep", state.copyAction, t("optLeaveTitle"), t("optLeaveText"));
+  }
+  $("fChoice").innerHTML = choice + (d.FolderKind === "Karte" && !d.Scoped ? `<div class="note" style="margin:6px 0 0">${t("scopedNote")}</div>` : "");
+  bindOpts($("fChoice"), (g, v) => { state.copyAction = v; updateFolderFoot(); });
+  $("fList").innerHTML = d.Candidates.map(c => `<div class="mini pickrow${state.folderPick.has(c.Name) ? " on" : ""}" data-n="${esc(c.Name)}">
+      <span class="cb">${CHECK_SVG}</span>${iconHtml(c.Name, c.Title, c.HasIcon, state.sg)}
+      <span class="nm" title="${esc(c.Name)}">${esc(c.Title)}</span>
+      <span class="kind${c.Kind === "Kopie" ? " copy" : ""}">${kindLabel(c.Kind)}</span>
+      <span class="sz">${c.SizeMB ? fmtSize(c.SizeMB) : ""}</span></div>`).join("");
+  $("fList").querySelectorAll(".pickrow").forEach(r => r.onclick = () => {
+    const n = r.dataset.n;
+    state.folderPick.has(n) ? state.folderPick.delete(n) : state.folderPick.add(n);
+    r.classList.toggle("on", state.folderPick.has(n));
+    updateFolderFoot();
+  });
+  updateFolderFoot();
+}
+
+function updateFolderFoot() {
+  const d = state.folderDetail;
+  const picked = d.Candidates.filter(c => state.folderPick.has(c.Name));
+  const effective = picked.filter(c => c.Kind !== "Kopie" || state.copyAction === "Move");
+  const mb = effective.reduce((a, c) => a + (c.SizeMB || 0), 0);
+  const all = picked.length === d.Candidates.length;
+  $("fListHead").innerHTML = `<span>${t("pickedOf", { a: fmt(picked.length), b: fmt(d.Candidates.length) })}</span><button id="fAll">${all ? t("selectNone") : t("selectAll")}</button>`;
+  $("fAll").onclick = () => { state.folderPick = all ? new Set() : new Set(d.Candidates.map(c => c.Name)); renderFolderModal(); };
+  $("fOk").disabled = !effective.length || state.gameRunning;
+  $("fOk").textContent = effective.length ? t("fOkN", { n: fmt(effective.length), s: fmtSize(mb) }) : t("nothing");
+}
+
+async function applyFolderClean() {
+  const mods = [...state.folderPick];
+  $("fOk").disabled = true;
+  try {
+    const r = await api("/api/folder/clean", { sg: state.sg, mods, copyAction: state.copyAction });
+    closeModal();
+    const skipped = r.skipped.filter(s => !s.Reason.startsWith("echte Kopie"));
+    toast(t("toastFolderClean", { n: fmt(r.removed.length) }) + (skipped.length ? t("skippedN", { n: fmt(skipped.length) }) : ""), skipped.length > 0 && !r.removed.length);
+    await loadUsage(state.sg, true);
+  } catch (e) { toast(e.message, true); $("fOk").disabled = false; }
+}
+
+function selectSavegame(id) {
+  if (state.sg === id) return;
+  state.sg = id;
+  state.selected.clear();
+  state.filter = "all";
+  state.usage = null;
+  state.folder = null;
+  state.folderDetail = null;
+  $("search").value = "";
+  state.query = "";
+  renderSavegames();
+  renderActionbar();
+  $("main").scrollTop = 0;
+  loadUsage(id);
+}
+
+$("search").oninput = e => { state.query = e.target.value; if (state.usage) renderGroups(); };
+$("selClear").onclick = () => { state.selected.clear(); renderGroups(); renderActionbar(); };
+$("selApply").onclick = openModal;
+$("modalCancel").onclick = closeModal;
+$("modalOk").onclick = applyDisable;
+$("fCancel").onclick = closeModal;
+$("fOk").onclick = applyFolderClean;
+$("histBtn").onclick = () => { if (!state.usage) return; renderDrawer(); $("overlay").classList.add("show"); $("drawer").classList.add("show"); };
+$("drawerClose").onclick = () => { $("drawer").classList.remove("show"); $("overlay").classList.remove("show"); };
+$("overlay").onclick = () => { closeModal(); $("drawer").classList.remove("show"); $("overlay").classList.remove("show"); };
+document.addEventListener("keydown", e => { if (e.key === "Escape") $("overlay").onclick(); });
+
+async function ping() {
+  try {
+    const r = await api("/api/ping");
+    if (r.gameRunning !== state.gameRunning) {
+      state.gameRunning = r.gameRunning;
+      if (state.usage) { state.usage.GameRunning = r.gameRunning; renderGroups(); renderActionbar(); }
+      if (state.folder) renderFolderPanel();
+      if (state.folderDetail && $("fmodal").classList.contains("show")) updateFolderFoot();
+    }
+    $("lost").classList.remove("show");
+    ping.failed = 0;
+    return r;
+  } catch {
+    $("lost").classList.add("show");
+    ping.failed = (ping.failed || 0) + 1;
+    if (ping.failed >= 3) window.close();
+    return null;
+  }
+}
+
+(async () => {
+  const urlLang = new URLSearchParams(location.search).get("lang");
+  const first = await ping();
+  LANG = I18N[urlLang] ? urlLang : (first && I18N[first.lang] ? first.lang : "de");
+  applyStaticTexts();
+  renderLoading();
+  setInterval(ping, 4000);
+  try {
+    state.savegames = await api("/api/savegames");
+    renderSavegames();
+    const wanted = new URLSearchParams(location.search).get("sg");
+    const pick = state.savegames.find(s => s.Id === wanted) || state.savegames[0];
+    if (pick) selectSavegame(pick.Id);
+  } catch (e) { toast(e.message, true); }
+})();
+</script>
+</body>
+</html>
