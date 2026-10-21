@@ -59,7 +59,18 @@ internal static class AppEnv
             catch (Exception) { }
             DataDir = settingsDir;
         }
-        if (DataDir == null) DataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "LS25 Mod Inventur");
+        if (DataDir == null)
+        {
+            string local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            DataDir = Path.Combine(local, "FS25 Mod Inventory");
+            string oldDir = Path.Combine(local, "LS25 Mod Inventur");
+            if (!Directory.Exists(DataDir) && Directory.Exists(oldDir))
+            {
+                try { Directory.Move(oldDir, DataDir); } catch (Exception) { }
+            }
+            string oldEdge = Path.Combine(local, "LS25ModInventur");
+            if (Directory.Exists(oldEdge)) { try { Directory.Delete(oldEdge, true); } catch (Exception) { } }
+        }
         Directory.CreateDirectory(DataDir);
         if (!string.IsNullOrEmpty(ModsRoot)) MapsRoot = Path.Combine(ModsRoot, "Karten");
         GameInstallPath = (!string.IsNullOrEmpty(configuredInstall) && Directory.Exists(configuredInstall)) ? configuredInstall : FindInstallPath();

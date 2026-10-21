@@ -1,12 +1,12 @@
-![Mod Inventur](docs/screenshots/banner_960x260_de.png)
+![FS25 Mod Inventory](docs/screenshots/banner_960x260_de.png)
 
-# Mod Inventur
+# FS25 Mod Inventory
 
 **Was dein Spielstand wirklich nutzt.**
 
-Mod Inventur ist ein kostenloses Windows-Programm für den Landwirtschafts-Simulator 25. Es schaut in einen Spielstand und zeigt, welche deiner aktiven Mods tatsächlich genutzt werden: platzierte Gebäude und Deko, gekaufte Fahrzeuge, Waren im Lager und alles, was davon abhängt. Den Rest schaltest du für diesen Spielstand mit einem Klick ab und nimmst ihn auf Wunsch aus dem Mods-Ordner, damit das Spiel ihn nicht mehr bei jedem Start einliest.
+FS25 Mod Inventory ist ein kostenloses Windows-Programm für den Landwirtschafts-Simulator 25. Es schaut in einen Spielstand und zeigt, welche deiner aktiven Mods tatsächlich genutzt werden: platzierte Gebäude und Deko, gekaufte Fahrzeuge, Waren im Lager und alles, was davon abhängt. Den Rest schaltest du für diesen Spielstand mit einem Klick ab und nimmst ihn auf Wunsch aus dem Mods-Ordner, damit das Spiel ihn nicht mehr bei jedem Start einliest.
 
-Der typische Fall: einen neuen Spielstand mit allen Mods anlegen, bauen und dekorieren, danach räumt Mod Inventur alles auf, was du nicht benutzt hast.
+Der typische Fall: einen neuen Spielstand mit allen Mods anlegen, bauen und dekorieren, danach räumt FS25 Mod Inventory alles auf, was du nicht benutzt hast.
 
 **Download:** [nalathan.itch.io/mod-inventur](https://nalathan.itch.io/mod-inventur)
 
@@ -33,7 +33,7 @@ English version: [README.md](README.md)
 ## So geht's
 
 1. Landwirtschafts-Simulator 25 beenden.
-2. `Mod Inventur.exe` starten.
+2. `FS25 Mod Inventory.exe` starten.
 3. Links einen Spielstand wählen.
 4. Die unbenutzten Mods auswählen, die raus sollen, oder "Alle auswählen".
 5. Auf "Im Spielstand deaktivieren" klicken und wählen, ob die Dateien auch aus dem Mods-Ordner sollen.
@@ -55,23 +55,23 @@ Alles Nötige ist bereits Teil von Windows, ein SDK braucht es nicht:
 powershell -ExecutionPolicy Bypass -File build.ps1
 ```
 
-Die exe landet in `dist\Mod Inventur.exe`.
+Die exe landet in `dist\FS25 Mod Inventory.exe`.
 
 ## Gut zu wissen
 
 * Das Spiel lädt immer ganze Mods. Ein einziges platziertes Objekt aus einem Pack hält das ganze Pack.
 * Haufen eines Mod-Fülltyps, die auf dem Boden liegen, werden nicht erkannt.
 * Manche Mods speichern globale Einstellungen, die andere Mods erwähnen. Ist so ein Mod abgeschaltet, schreibt das Spiel eventuell eine harmlose Warnung ins Log.
-* Ohne den LS25 Mod Manager nutzt Mod Inventur den Mods-Ordner, der gerade im Spiel eingestellt ist.
+* Ohne den LS25 Mod Manager nutzt FS25 Mod Inventory den Mods-Ordner, der gerade im Spiel eingestellt ist.
 * Als neues, unsigniertes Programm melden einige KI-basierte Virenscanner es eventuell.
 
 ## Datenschutz
 
-Alles bleibt auf deinem PC. Mod Inventur zeigt sein Fenster über eine kleine Seite, die nur auf deinem eigenen Rechner läuft (127.0.0.1). Es verbindet sich nie mit dem Internet, es gibt kein Konto und kein Tracking. Verlauf, Icon-Zwischenspeicher und Log liegen in `%LOCALAPPDATA%\LS25 Mod Inventur`.
+Alles bleibt auf deinem PC. FS25 Mod Inventory zeigt sein Fenster über eine kleine Seite, die nur auf deinem eigenen Rechner läuft (127.0.0.1). Es verbindet sich nie mit dem Internet, es gibt kein Konto und kein Tracking. Verlauf, Icon-Zwischenspeicher und Log liegen in `%LOCALAPPDATA%\FS25 Mod Inventory`.
 
 ## Feedback
 
-Fragen, Ideen oder ein Mod, der falsch einsortiert ist? Leg ein [Issue](https://github.com/Nalathan01/LS25-Mod-Inventur/issues) an oder schreib einen Kommentar auf der [itch.io-Seite](https://nalathan.itch.io/mod-inventur). Bei einem falsch einsortierten Mod helfen der Name des Mods und der Karte sehr.
+Fragen, Ideen oder ein Mod, der falsch einsortiert ist? Leg ein [Issue](https://github.com/Nalathan01/FS25-Mod-Inventory/issues) an oder schreib einen Kommentar auf der [itch.io-Seite](https://nalathan.itch.io/mod-inventur). Bei einem falsch einsortierten Mod helfen der Name des Mods und der Karte sehr.
 
 ## Links
 
@@ -86,4 +86,4 @@ MIT, siehe [LICENSE](LICENSE).
 
 ## Hinweis
 
-Mod Inventur ist ein inoffizielles Fan-Tool. Es steht in keiner Verbindung zu GIANTS Software und wird von GIANTS Software nicht unterstützt. Farming Simulator ist eine Marke von GIANTS Software. Alle Mod-Namen und Icons gehören ihren Autoren.
+FS25 Mod Inventory ist ein inoffizielles Fan-Tool. Es steht in keiner Verbindung zu GIANTS Software und wird von GIANTS Software nicht unterstützt. Farming Simulator ist eine Marke von GIANTS Software. Alle Mod-Namen und Icons gehören ihren Autoren.

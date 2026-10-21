@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mod Inventur</title>
+<title>FS25 Mod Inventory</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23e0a63a'/%3E%3Cpath d='M10 9h12M10 15h12M10 21h7' stroke='%231a1204' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
 :root {
@@ -442,7 +442,7 @@ button { font: inherit; color: inherit; }
 <aside class="rail">
   <div class="brand">
     <div class="brand-mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a1204" stroke-width="2.4" stroke-linecap="round"><path d="M7 6h10M7 12h10M7 18h6"/></svg></div>
-    <div><h1>Mod Inventur</h1><p data-i18n="brandSub"></p></div>
+    <div><h1>FS25 Mod Inventory</h1><p data-i18n="brandSub"></p></div>
   </div>
   <div class="rail-label" data-i18n="savegames"></div>
   <div class="sg-list" id="sgList"></div>
@@ -533,7 +533,7 @@ const I18N = {
     search: "Mod suchen", history: "Verlauf", gameRunningHint: "Spiel läuft. Bitte erst beenden.", clearSel: "Auswahl aufheben",
     disableBtn: "Im Spielstand deaktivieren", cancel: "Abbrechen", disable: "Deaktivieren", folderTitle: "Mods-Ordner aufräumen",
     folderOkDefault: "Aus dem Ordner nehmen", close: "Schließen", lostTitle: "Verbindung getrennt",
-    lostText: "Der Hintergrunddienst läuft nicht mehr. Bitte die Mod Inventur neu starten.",
+    lostText: "Der Hintergrunddienst läuft nicht mehr. Bitte FS25 Mod Inventory neu starten.",
     gUnused: "Unbenutzt", gUnusedDesc: "Aktiv, aber nichts davon steht, fährt oder lagert in diesem Spielstand. Sichere Kandidaten zum Deaktivieren.",
     gScript: "Scripts", gScriptDesc: "Scripts platzieren nichts, ihre Nutzung lässt sich nicht messen. Hier entscheidest du selbst. Eine Markierung zeigt, ob ein Script eigene Daten im Spielstand hinterlegt hat.",
     gUsed: "Benutzt", gUsedDesc: "Gebäude, Fahrzeuge oder Objekte aus diesen Mods stehen im Spielstand. Geschützt.",
@@ -545,7 +545,7 @@ const I18N = {
     tagData: "Daten im Spielstand", tagScripts: "enthält Scripts", tagInactive: "nicht aktiv", protected: "Geschützt",
     gameRunTitle: "Das Spiel läuft gerade", gameRunText: "Ansehen geht, ändern erst nach dem Beenden. Sonst überschreibt das Spiel die Änderung beim nächsten Speichern.",
     unknownTitle: "{n} aktive Mods liegen nicht im Mods-Ordner",
-    unknownText: "Wahrscheinlich nutzt dieser Spielstand einen anderen Mods-Ordner als den gerade im Spiel eingestellten. Das Ergebnis ist dann unvollständig. Stell im Spiel den passenden Mods-Ordner ein und lade die Mod Inventur neu.",
+    unknownText: "Wahrscheinlich nutzt dieser Spielstand einen anderen Mods-Ordner als den gerade im Spiel eingestellten. Das Ergebnis ist dann unvollständig. Stell im Spiel den passenden Mods-Ordner ein und lade FS25 Mod Inventory neu.",
     warnTitle1: "1 Mod braucht Aufmerksamkeit", warnTitleN: "{n} Mods brauchen Aufmerksamkeit",
     warnText: "Sonst gehen beim nächsten Speichern Objekte verloren oder das Spiel bemängelt fehlende Abhängigkeiten.",
     selectAll: "Alle auswählen", selectNone: "Keine auswählen", emptyTitle: "Nichts gefunden", emptyText: "Kein Mod passt zu Filter und Suche.",
@@ -559,7 +559,7 @@ const I18N = {
     toastDisabled: "{n} Mods im Spielstand deaktiviert", toastDisabledFolder: ", {n} davon aus dem Mods-Ordner genommen",
     toastKept: " ({n} bleiben, weil sie noch gebraucht werden)", histEmptyTitle: "Noch nichts deaktiviert",
     histEmptyText: "Hier erscheint alles, was du in diesem Spielstand abschaltest.", histFolder: "Aus dem Mods-Ordner genommen",
-    mismatchTitle: "Dieser Spielstand gehört zu einem anderen Mods-Ordner", mismatchText: "Im Spiel ist gerade {folder} als Mods-Ordner eingestellt, die Karte dieses Spielstands liegt dort aber nicht. Die Mod Inventur kann ihn deshalb nicht prüfen. Stell im Spiel den passenden Mods-Ordner ein und starte die Mod Inventur neu.", otherFolder: "anderer Mods-Ordner", eMismatch: "Dieser Spielstand gehört zu einem anderen Mods-Ordner als dem gerade im Spiel eingestellten.",
+    mismatchTitle: "Dieser Spielstand gehört zu einem anderen Mods-Ordner", mismatchText: "Im Spiel ist gerade {folder} als Mods-Ordner eingestellt, die Karte dieses Spielstands liegt dort aber nicht. FS25 Mod Inventory kann ihn deshalb nicht prüfen. Stell im Spiel den passenden Mods-Ordner ein und starte FS25 Mod Inventory neu.", otherFolder: "anderer Mods-Ordner", eMismatch: "Dieser Spielstand gehört zu einem anderen Mods-Ordner als dem gerade im Spiel eingestellten.",
     histSg: "Im Spielstand deaktiviert", histBoth: "Deaktiviert und aus dem Mods-Ordner genommen", undone: "zurückgeholt", toastUndone: "{n} Mods zurückgeholt", backInFolder: "wieder im Ordner", backActive: "wieder aktiv", putBack: "Zurücklegen",
     restore: "Zurückholen", restoreAll: "Alle zurückholen",
     gameStillRunning: "Das Spiel läuft noch. Bitte erst beenden.", toastBackFolder: "{n} Mods wieder im Mods-Ordner",
@@ -596,7 +596,7 @@ const I18N = {
     search: "Search mods", history: "History", gameRunningHint: "The game is running. Please close it first.", clearSel: "Clear selection",
     disableBtn: "Disable in savegame", cancel: "Cancel", disable: "Disable", folderTitle: "Clean up mods folder",
     folderOkDefault: "Remove from folder", close: "Close", lostTitle: "Connection lost",
-    lostText: "The background service has stopped. Please restart Mod Inventur.",
+    lostText: "The background service has stopped. Please restart FS25 Mod Inventory.",
     gUnused: "Unused", gUnusedDesc: "Active, but nothing from these mods stands, drives or is stored in this savegame. Safe candidates to disable.",
     gScript: "Scripts", gScriptDesc: "Scripts don't place anything, so their use can't be measured. You decide here. A badge shows whether a script has stored its own data in the savegame.",
     gUsed: "Used", gUsedDesc: "Buildings, vehicles or objects from these mods are in the savegame. Protected.",
@@ -608,7 +608,7 @@ const I18N = {
     tagData: "Data in savegame", tagScripts: "contains scripts", tagInactive: "not active", protected: "Protected",
     gameRunTitle: "The game is running", gameRunText: "You can look around, but changes are only possible after closing it. Otherwise the game overwrites them on its next save.",
     unknownTitle: "{n} active mods are not in the mods folder",
-    unknownText: "This savegame probably uses a different mods folder than the one currently set in the game, so the result is incomplete. Set the matching mods folder in the game and restart Mod Inventur.",
+    unknownText: "This savegame probably uses a different mods folder than the one currently set in the game, so the result is incomplete. Set the matching mods folder in the game and restart FS25 Mod Inventory.",
     warnTitle1: "1 mod needs attention", warnTitleN: "{n} mods need attention",
     warnText: "Otherwise objects are lost on the next save or the game complains about missing dependencies.",
     selectAll: "Select all", selectNone: "Select none", emptyTitle: "Nothing found", emptyText: "No mod matches the filter and search.",
@@ -622,7 +622,7 @@ const I18N = {
     toastDisabled: "{n} mods disabled in the savegame", toastDisabledFolder: ", {n} of them removed from the mods folder",
     toastKept: " ({n} stay because they are still needed)", histEmptyTitle: "Nothing disabled yet",
     histEmptyText: "Everything you switch off in this savegame appears here.", histFolder: "Removed from the mods folder",
-    mismatchTitle: "This savegame belongs to a different mods folder", mismatchText: "The game is currently set to {folder} as its mods folder, but this savegame's map is not in it. Mod Inventur therefore can't check it. Set the matching mods folder in the game and restart Mod Inventur.", otherFolder: "other mods folder", eMismatch: "This savegame belongs to a different mods folder than the one currently set in the game.",
+    mismatchTitle: "This savegame belongs to a different mods folder", mismatchText: "The game is currently set to {folder} as its mods folder, but this savegame's map is not in it. FS25 Mod Inventory therefore can't check it. Set the matching mods folder in the game and restart FS25 Mod Inventory.", otherFolder: "other mods folder", eMismatch: "This savegame belongs to a different mods folder than the one currently set in the game.",
     histSg: "Disabled in the savegame", histBoth: "Disabled and removed from the mods folder", undone: "restored", toastUndone: "{n} mods restored", backInFolder: "back in folder", backActive: "active again", putBack: "Put back",
     restore: "Restore", restoreAll: "Restore all",
     gameStillRunning: "The game is still running. Please close it first.", toastBackFolder: "{n} mods back in the mods folder",
@@ -659,7 +659,7 @@ const I18N = {
     search: "Rechercher un mod", history: "Historique", gameRunningHint: "Le jeu est en cours. Veuillez d'abord le fermer.", clearSel: "Effacer la sélection",
     disableBtn: "Désactiver dans la partie", cancel: "Annuler", disable: "Désactiver", folderTitle: "Nettoyer le dossier de mods",
     folderOkDefault: "Retirer du dossier", close: "Fermer", lostTitle: "Connexion perdue",
-    lostText: "Le service en arrière-plan s'est arrêté. Veuillez redémarrer Mod Inventur.",
+    lostText: "Le service en arrière-plan s'est arrêté. Veuillez redémarrer FS25 Mod Inventory.",
     gUnused: "Inutilisés", gUnusedDesc: "Actifs, mais rien de ces mods n'est posé, ne roule ou n'est stocké dans cette partie. Candidats sûrs à la désactivation.",
     gScript: "Scripts", gScriptDesc: "Les scripts ne posent rien, leur utilisation ne peut donc pas être mesurée. C'est à vous de décider. Un badge indique si un script a enregistré ses propres données dans la partie.",
     gUsed: "Utilisés", gUsedDesc: "Des bâtiments, véhicules ou objets de ces mods se trouvent dans la partie. Protégés.",
@@ -671,7 +671,7 @@ const I18N = {
     tagData: "Données dans la partie", tagScripts: "contient des scripts", tagInactive: "inactif", protected: "Protégé",
     gameRunTitle: "Le jeu est en cours", gameRunText: "Vous pouvez consulter, mais les modifications ne sont possibles qu'après sa fermeture. Sinon le jeu les écrase à la prochaine sauvegarde.",
     unknownTitle: "{n} mods actifs ne sont pas dans le dossier de mods",
-    unknownText: "Cette partie utilise probablement un autre dossier de mods que celui actuellement réglé dans le jeu, le résultat est donc incomplet. Réglez le bon dossier de mods dans le jeu et redémarrez Mod Inventur.",
+    unknownText: "Cette partie utilise probablement un autre dossier de mods que celui actuellement réglé dans le jeu, le résultat est donc incomplet. Réglez le bon dossier de mods dans le jeu et redémarrez FS25 Mod Inventory.",
     warnTitle1: "1 mod requiert votre attention", warnTitleN: "{n} mods requièrent votre attention",
     warnText: "Sinon des objets seront perdus à la prochaine sauvegarde ou le jeu signalera des dépendances manquantes.",
     selectAll: "Tout sélectionner", selectNone: "Ne rien sélectionner", emptyTitle: "Aucun résultat", emptyText: "Aucun mod ne correspond au filtre et à la recherche.",
@@ -685,7 +685,7 @@ const I18N = {
     toastDisabled: "{n} mods désactivés dans la partie", toastDisabledFolder: ", dont {n} retirés du dossier de mods",
     toastKept: " ({n} restent car ils sont encore nécessaires)", histEmptyTitle: "Rien de désactivé pour l'instant",
     histEmptyText: "Tout ce que vous désactivez dans cette partie apparaît ici.", histFolder: "Retirés du dossier de mods",
-    mismatchTitle: "Cette partie appartient à un autre dossier de mods", mismatchText: "Le jeu utilise actuellement {folder} comme dossier de mods, mais la carte de cette partie ne s'y trouve pas. Mod Inventur ne peut donc pas la vérifier. Réglez le bon dossier de mods dans le jeu et redémarrez Mod Inventur.", otherFolder: "autre dossier de mods", eMismatch: "Cette partie appartient à un autre dossier de mods que celui actuellement réglé dans le jeu.",
+    mismatchTitle: "Cette partie appartient à un autre dossier de mods", mismatchText: "Le jeu utilise actuellement {folder} comme dossier de mods, mais la carte de cette partie ne s'y trouve pas. FS25 Mod Inventory ne peut donc pas la vérifier. Réglez le bon dossier de mods dans le jeu et redémarrez FS25 Mod Inventory.", otherFolder: "autre dossier de mods", eMismatch: "Cette partie appartient à un autre dossier de mods que celui actuellement réglé dans le jeu.",
     histSg: "Désactivés dans la partie", histBoth: "Désactivés et retirés du dossier de mods", undone: "rétabli", toastUndone: "{n} mods rétablis", backInFolder: "de retour dans le dossier", backActive: "de nouveau actif", putBack: "Remettre",
     restore: "Rétablir", restoreAll: "Tout rétablir",
     gameStillRunning: "Le jeu est encore en cours. Veuillez d'abord le fermer.", toastBackFolder: "{n} mods de retour dans le dossier de mods",

@@ -1,5 +1,5 @@
 param(
-    [string]$OutFile = (Join-Path $PSScriptRoot "dist\Mod Inventur.exe"),
+    [string]$OutFile = (Join-Path $PSScriptRoot "dist\FS25 Mod Inventory.exe"),
     [string]$Version = "1.0.0.0"
 )
 
@@ -11,15 +11,15 @@ if (-not (Test-Path $csc)) { throw "C# compiler not found: $csc" }
 
 $outDir = Split-Path $OutFile -Parent
 if (-not (Test-Path $outDir)) { New-Item -ItemType Directory -Path $outDir | Out-Null }
-$buildDir = Join-Path $env:TEMP "ModInventurBuild"
+$buildDir = Join-Path $env:TEMP "FS25ModInventoryBuild"
 if (-not (Test-Path $buildDir)) { New-Item -ItemType Directory -Path $buildDir | Out-Null }
 
 $assemblyInfo = Join-Path $buildDir "AssemblyInfo.cs"
 @"
 using System.Reflection;
-[assembly: AssemblyTitle("Mod Inventur")]
-[assembly: AssemblyProduct("Mod Inventur")]
-[assembly: AssemblyDescription("Mod Inventur for Farming Simulator 25")]
+[assembly: AssemblyTitle("FS25 Mod Inventory")]
+[assembly: AssemblyProduct("FS25 Mod Inventory")]
+[assembly: AssemblyDescription("FS25 Mod Inventory")]
 [assembly: AssemblyCompany("Nalathan")]
 [assembly: AssemblyCopyright("Nalathan")]
 [assembly: AssemblyVersion("$Version")]

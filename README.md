@@ -1,12 +1,12 @@
-![Mod Inventur](docs/screenshots/banner_960x260_en.png)
+![FS25 Mod Inventory](docs/screenshots/banner_960x260_en.png)
 
-# Mod Inventur
+# FS25 Mod Inventory
 
 **What your savegame really uses.**
 
-Mod Inventur is a free Windows tool for Farming Simulator 25. It looks into a savegame and shows which of your active mods are actually in use: placed buildings and decorations, owned vehicles, goods in storage and everything they depend on. The rest can be switched off for that savegame with one click and taken out of the mods folder, so the game no longer reads it at every start.
+FS25 Mod Inventory is a free Windows tool for Farming Simulator 25. It looks into a savegame and shows which of your active mods are actually in use: placed buildings and decorations, owned vehicles, goods in storage and everything they depend on. The rest can be switched off for that savegame with one click and taken out of the mods folder, so the game no longer reads it at every start.
 
-The typical case: start a new savegame with all your mods active, build and decorate, then let Mod Inventur clean up whatever you didn't use.
+The typical case: start a new savegame with all your mods active, build and decorate, then let FS25 Mod Inventory clean up whatever you didn't use.
 
 **Download:** [nalathan.itch.io/mod-inventur](https://nalathan.itch.io/mod-inventur)
 
@@ -33,7 +33,7 @@ Deutsche Version: [README.de.md](README.de.md)
 ## How to use
 
 1. Close Farming Simulator 25.
-2. Start `Mod Inventur.exe`.
+2. Start `FS25 Mod Inventory.exe`.
 3. Pick a savegame on the left.
 4. Select the unused mods you want to drop, or use "Select all".
 5. Click "Disable in savegame" and choose whether the files should also leave the mods folder.
@@ -55,23 +55,23 @@ Everything needed is already part of Windows, no SDK required:
 powershell -ExecutionPolicy Bypass -File build.ps1
 ```
 
-The exe is written to `dist\Mod Inventur.exe`.
+The exe is written to `dist\FS25 Mod Inventory.exe`.
 
 ## Good to know
 
 * A mod is the smallest unit the game loads. One placed object from a pack keeps the whole pack.
 * Heaps of a mod's fill type lying on the ground are not detected.
 * Some mods keep global settings that mention other mods. If such a mod is switched off, the game may log a harmless warning.
-* Without the LS25 Mod Manager, Mod Inventur uses the mods folder that is currently set in the game.
+* Without the LS25 Mod Manager, FS25 Mod Inventory uses the mods folder that is currently set in the game.
 * As a new and unsigned program, a few AI based virus scanners may warn about it.
 
 ## Privacy
 
-Everything stays on your PC. Mod Inventur shows its window through a small page served only to your own computer (127.0.0.1). It never connects to the internet, there is no account and no tracking. History, icon cache and log are stored in `%LOCALAPPDATA%\LS25 Mod Inventur`.
+Everything stays on your PC. FS25 Mod Inventory shows its window through a small page served only to your own computer (127.0.0.1). It never connects to the internet, there is no account and no tracking. History, icon cache and log are stored in `%LOCALAPPDATA%\FS25 Mod Inventory`.
 
 ## Feedback
 
-Questions, ideas or a mod that is sorted wrong? Open an [issue](https://github.com/Nalathan01/LS25-Mod-Inventur/issues) or leave a comment on the [itch.io page](https://nalathan.itch.io/mod-inventur). For a wrongly sorted mod, the name of the mod and of the map helps a lot.
+Questions, ideas or a mod that is sorted wrong? Open an [issue](https://github.com/Nalathan01/FS25-Mod-Inventory/issues) or leave a comment on the [itch.io page](https://nalathan.itch.io/mod-inventur). For a wrongly sorted mod, the name of the mod and of the map helps a lot.
 
 ## Links
 
@@ -86,4 +86,4 @@ MIT, see [LICENSE](LICENSE).
 
 ## Disclaimer
 
-Mod Inventur is an unofficial fan tool. It is not affiliated with or endorsed by GIANTS Software. Farming Simulator is a trademark of GIANTS Software. All mod names and icons belong to their authors.
+FS25 Mod Inventory is an unofficial fan tool. It is not affiliated with or endorsed by GIANTS Software. Farming Simulator is a trademark of GIANTS Software. All mod names and icons belong to their authors.

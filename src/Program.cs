@@ -27,7 +27,7 @@ internal static class Program
         {
             Exception inner = ex;
             while (inner.InnerException != null) inner = inner.InnerException;
-            MessageBox.Show(inner.Message, "Mod Inventur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(inner.Message, "FS25 Mod Inventory", MessageBoxButtons.OK, MessageBoxIcon.Error);
             return 1;
         }
     }

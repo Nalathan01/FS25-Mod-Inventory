@@ -39,7 +39,7 @@ internal sealed class InventurServer
         listener.Prefixes.Add(prefix);
         listener.Start();
         string url = prefix + "?t=" + token;
-        AppEnv.Log("ModInventur", "Gestartet auf " + prefix);
+        AppEnv.Log("ModInventory", "Gestartet auf " + prefix);
 
         if (!noBrowser) OpenWindow(url);
         else if (!string.IsNullOrEmpty(urlFile)) File.WriteAllText(urlFile, url, new UTF8Encoding(false));
@@ -57,7 +57,7 @@ internal sealed class InventurServer
         }
         listener.Stop();
         listener.Close();
-        AppEnv.Log("ModInventur", "Beendet");
+        AppEnv.Log("ModInventory", "Beendet");
     }
 
     private static int FreePort()
@@ -95,7 +95,7 @@ internal sealed class InventurServer
         }
         if (edge != null)
         {
-            string profileDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"LS25ModInventur\edge");
+            string profileDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"FS25ModInventory\edge");
             ProcessStartInfo psi = new ProcessStartInfo(edge, "--app=" + url + " --user-data-dir=\"" + profileDir + "\" --window-size=1480,940 --no-first-run");
             psi.UseShellExecute = false;
             Process.Start(psi);
@@ -184,7 +184,7 @@ internal sealed class InventurServer
         }
         catch (Exception ex)
         {
-            AppEnv.Log("ModInventur", "Fehler bei " + path + ": " + ex.Message);
+            AppEnv.Log("ModInventory", "Fehler bei " + path + ": " + ex.Message);
             try { SendJson(ctx, 500, Obj("error", ex.Message)); } catch (Exception) { }
         }
     }
