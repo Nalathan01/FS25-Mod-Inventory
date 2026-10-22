@@ -81,17 +81,6 @@ Fragen, Ideen oder ein Mod, der falsch einsortiert ist? Leg ein [Issue](https://
 * YouTube: https://www.youtube.com/@nalathangaming
 * Meine Mods im ModHub: https://www.farming-simulator.com/mods.php?title=fs2025&searchMod=Nalathan
 
-## Code-Signatur
-
-Kostenlose Code-Signatur durch [SignPath.io](https://about.signpath.io/), Zertifikat von der [SignPath Foundation](https://signpath.org/).
-
-* Committer und Prüfer: [Nalathan01](https://github.com/Nalathan01)
-* Freigabe: [Nalathan01](https://github.com/Nalathan01)
-
-Signiert werden nur Builds, die GitHub Actions automatisch aus dem Quellcode in diesem Repository erstellt.
-
-Datenschutz: Dieses Programm verbindet sich nur mit GitHub, um nach Updates zu schauen. Informationen über deine Mods oder Spielstände schickt es nicht nach außen.
-
 ## Lizenz
 
 MIT, siehe [LICENSE](LICENSE).
