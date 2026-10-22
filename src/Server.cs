@@ -29,10 +29,13 @@ internal sealed class InventurServer
     private DateTime lastPing = DateTime.Now;
     private bool firstPingSeen;
     private bool running = true;
+    private bool restart;
 
     public void Run(int port, bool noBrowser, string urlFile)
     {
         html = ReadResource("index.html");
+        Updater.CleanUp();
+        Updater.CheckInBackground();
         if (port == 0) port = FreePort();
         string prefix = "http://127.0.0.1:" + port.ToString(CultureInfo.InvariantCulture) + "/";
         HttpListener listener = new HttpListener();
@@ -58,6 +61,7 @@ internal sealed class InventurServer
         listener.Stop();
         listener.Close();
         AppEnv.Log("ModInventory", "Beendet");
+        if (restart) Process.Start(Assembly.GetExecutingAssembly().Location, noBrowser ? "-NoBrowser" + (string.IsNullOrEmpty(urlFile) ? "" : " -UrlFile \"" + urlFile + "\"") : "");
     }
 
     private static int FreePort()
@@ -128,6 +132,8 @@ internal sealed class InventurServer
                 Dictionary<string, object> r = Obj("ok", true);
                 r["gameRunning"] = AppEnv.GameRunning();
                 r["lang"] = uiLang;
+                r["update"] = Updater.Available;
+                r["version"] = Updater.CurrentText;
                 SendJson(ctx, 200, r);
             }
             else if (path == "/api/savegames") SendJson(ctx, 200, SavegameList());
@@ -174,6 +180,13 @@ internal sealed class InventurServer
                 string png = IconPath(req.QueryString["sg"], modName);
                 if (png != null) Send(ctx, 200, File.ReadAllBytes(png), "image/png");
                 else SendJson(ctx, 404, Obj("error", "kein Icon"));
+            }
+            else if (path == "/api/update")
+            {
+                Updater.Install();
+                SendJson(ctx, 200, Obj("ok", true));
+                restart = true;
+                running = false;
             }
             else if (path == "/api/quit")
             {

@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Net;
 using System.Windows.Forms;
 
 internal static class Program
@@ -19,6 +20,7 @@ internal static class Program
                 else if (a.Equals("-Port", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length) port = int.Parse(args[++i], CultureInfo.InvariantCulture);
                 else if (a.Equals("-UrlFile", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length) urlFile = args[++i];
             }
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             AppEnv.Init();
             new InventurServer().Run(port, noBrowser, urlFile);
             return 0;

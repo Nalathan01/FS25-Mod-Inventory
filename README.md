@@ -25,6 +25,7 @@ Deutsche Version: [README.de.md](README.de.md)
 * **History:** one click brings everything back, mods active again and files back in place.
 * **Warnings** for objects that would be lost on the next save and for missing dependencies.
 * **Detects the wrong mods folder:** savegames that belong to a different folder than the one set in the game are greyed out and can't be changed.
+* **Updates with one click:** when a new version is out, the tool shows it and updates itself after one click.
 * **English, German and French,** following your Windows language.
 
 ![Overview](docs/screenshots/1_overview_en.png)
@@ -67,7 +68,7 @@ The exe is written to `dist\FS25 Mod Inventory.exe`.
 
 ## Privacy
 
-Everything stays on your PC. FS25 Mod Inventory shows its window through a small page served only to your own computer (127.0.0.1). It never connects to the internet, there is no account and no tracking. History, icon cache and log are stored in `%LOCALAPPDATA%\FS25 Mod Inventory`.
+Everything stays on your PC. FS25 Mod Inventory shows its window through a small page served only to your own computer (127.0.0.1). Its only connection to the internet is a check on GitHub for a new version at start. Nothing about your mods or savegames is sent, there is no account and no tracking. History, icon cache and log are stored in `%LOCALAPPDATA%\FS25 Mod Inventory`.
 
 ## Feedback
 
@@ -89,7 +90,7 @@ Free code signing provided by [SignPath.io](https://about.signpath.io/), certifi
 
 Only builds made automatically by GitHub Actions from the source code in this repository are signed.
 
-Privacy: this program does not connect to the internet and does not send any information to networked systems.
+Privacy: this program only connects to GitHub to look for updates. It does not send any information about your mods or savegames to networked systems.
 
 ## License
 

@@ -25,6 +25,7 @@ English version: [README.md](README.md)
 * **Verlauf:** Ein Klick holt alles zurück, Mods wieder aktiv und Dateien wieder an ihrem Platz.
 * **Warnungen** bei Objekten, die beim nächsten Speichern verloren gingen, und bei fehlenden Abhängigkeiten.
 * **Erkennt den falschen Mods-Ordner:** Spielstände, die zu einem anderen Ordner gehören als dem im Spiel eingestellten, sind ausgegraut und lassen sich nicht ändern.
+* **Updates mit einem Klick:** Gibt es eine neue Version, zeigt das Tool sie an und aktualisiert sich nach einem Klick selbst.
 * **Deutsch, Englisch und Französisch,** passend zur Windows-Sprache.
 
 ![Übersicht](docs/screenshots/1_overview_de.png)
@@ -67,7 +68,7 @@ Die exe landet in `dist\FS25 Mod Inventory.exe`.
 
 ## Datenschutz
 
-Alles bleibt auf deinem PC. FS25 Mod Inventory zeigt sein Fenster über eine kleine Seite, die nur auf deinem eigenen Rechner läuft (127.0.0.1). Es verbindet sich nie mit dem Internet, es gibt kein Konto und kein Tracking. Verlauf, Icon-Zwischenspeicher und Log liegen in `%LOCALAPPDATA%\FS25 Mod Inventory`.
+Alles bleibt auf deinem PC. FS25 Mod Inventory zeigt sein Fenster über eine kleine Seite, die nur auf deinem eigenen Rechner läuft (127.0.0.1). Ins Internet geht es nur, um beim Start auf GitHub nach einer neuen Version zu schauen. Über deine Mods und Spielstände wird dabei nichts verschickt, es gibt kein Konto und kein Tracking. Verlauf, Icon-Zwischenspeicher und Log liegen in `%LOCALAPPDATA%\FS25 Mod Inventory`.
 
 ## Feedback
 
@@ -89,7 +90,7 @@ Kostenlose Code-Signatur durch [SignPath.io](https://about.signpath.io/), Zertif
 
 Signiert werden nur Builds, die GitHub Actions automatisch aus dem Quellcode in diesem Repository erstellt.
 
-Datenschutz: Dieses Programm verbindet sich nicht mit dem Internet und schickt keine Informationen nach außen.
+Datenschutz: Dieses Programm verbindet sich nur mit GitHub, um nach Updates zu schauen. Informationen über deine Mods oder Spielstände schickt es nicht nach außen.
 
 ## Lizenz
 

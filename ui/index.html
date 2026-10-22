@@ -76,6 +76,11 @@ button { font: inherit; color: inherit; }
 .brand p { margin: 0; font-size: 12px; color: var(--muted); }
 .rail-label { padding: 6px 20px 8px; font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 .sg-list { overflow-y: auto; padding: 0 12px 16px; display: flex; flex-direction: column; gap: 6px; }
+.rail-foot { margin-top: auto; padding: 14px 16px 16px; }
+.upd-box { background: var(--accent-soft); border: 1px solid rgba(224,166,58,0.35); border-radius: 12px; padding: 10px 12px; display: grid; gap: 8px; }
+.upd-box b { font-size: 13px; }
+.upd-box span { font-size: 12.5px; color: var(--ink-2); }
+.rail-foot[hidden] { display: none; }
 .sg {
   display: grid;
   grid-template-columns: 52px 1fr;
@@ -446,6 +451,7 @@ button { font: inherit; color: inherit; }
   </div>
   <div class="rail-label" data-i18n="savegames"></div>
   <div class="sg-list" id="sgList"></div>
+  <div class="rail-foot" id="updBox" hidden><div class="upd-box"><div><b data-i18n="updTitle"></b><br><span id="updText"></span></div><button class="btn primary" id="updGo" data-i18n="updNow"></button></div></div>
 </aside>
 
 <div class="main" id="main">
@@ -529,6 +535,7 @@ const token = new URLSearchParams(location.search).get("t");
 
 const I18N = {
   de: {
+    updTitle: "Update verfügbar", updText: "Version {v} ist da, du hast {c}.", updNow: "Jetzt aktualisieren", updLoading: "Update wird geladen, das Tool startet gleich neu.", updHash: "Die geladene Datei stimmt nicht mit GitHub überein und wurde verworfen.", updFailed: "Update fehlgeschlagen: {a}",
     brandSub: "Was dein Spielstand wirklich nutzt", savegames: "Spielstände", loadingSg: "Spielstand wird geladen",
     search: "Mod suchen", history: "Verlauf", gameRunningHint: "Spiel läuft. Bitte erst beenden.", clearSel: "Auswahl aufheben",
     disableBtn: "Im Spielstand deaktivieren", cancel: "Abbrechen", disable: "Deaktivieren", folderTitle: "Mods-Ordner aufräumen",
@@ -592,6 +599,7 @@ const I18N = {
     eArchiveExists: "Im Archiv liegt schon ein Eintrag mit diesem Namen: {x}", eSourceGone: "Quelle nicht mehr vorhanden: {x}"
   },
   en: {
+    updTitle: "Update available", updText: "Version {v} is out, you have {c}.", updNow: "Update now", updLoading: "Downloading the update, the tool restarts in a moment.", updHash: "The downloaded file does not match GitHub and was discarded.", updFailed: "Update failed: {a}",
     brandSub: "What your savegame really uses", savegames: "Savegames", loadingSg: "Loading savegame",
     search: "Search mods", history: "History", gameRunningHint: "The game is running. Please close it first.", clearSel: "Clear selection",
     disableBtn: "Disable in savegame", cancel: "Cancel", disable: "Disable", folderTitle: "Clean up mods folder",
@@ -655,6 +663,7 @@ const I18N = {
     eArchiveExists: "The archive already contains an item with this name: {x}", eSourceGone: "Source no longer exists: {x}"
   },
   fr: {
+    updTitle: "Mise à jour disponible", updText: "La version {v} est sortie, vous avez la {c}.", updNow: "Mettre à jour", updLoading: "Téléchargement de la mise à jour, l'outil redémarre dans un instant.", updHash: "Le fichier téléchargé ne correspond pas à GitHub et a été supprimé.", updFailed: "Échec de la mise à jour : {a}",
     brandSub: "Ce que votre partie utilise vraiment", savegames: "Parties", loadingSg: "Chargement de la partie",
     search: "Rechercher un mod", history: "Historique", gameRunningHint: "Le jeu est en cours. Veuillez d'abord le fermer.", clearSel: "Effacer la sélection",
     disableBtn: "Désactiver dans la partie", cancel: "Annuler", disable: "Désactiver", folderTitle: "Nettoyer le dossier de mods",
@@ -1251,6 +1260,21 @@ $("drawerClose").onclick = () => { $("drawer").classList.remove("show"); $("over
 $("overlay").onclick = () => { closeModal(); $("drawer").classList.remove("show"); $("overlay").classList.remove("show"); };
 document.addEventListener("keydown", e => { if (e.key === "Escape") $("overlay").onclick(); });
 
+$("updGo").onclick = async () => {
+  if (state.updating) return;
+  state.updating = true;
+  $("updGo").disabled = true;
+  toast(t("updLoading"));
+  try {
+    await api("/api/update", {});
+    setTimeout(() => window.close(), 800);
+  } catch (e) {
+    state.updating = false;
+    $("updGo").disabled = false;
+    toast(t("updFailed", { a: e.message === "updateHash" ? t("updHash") : e.message }), true);
+  }
+};
+
 async function ping() {
   try {
     const r = await api("/api/ping");
@@ -1262,11 +1286,13 @@ async function ping() {
     }
     $("lost").classList.remove("show");
     ping.failed = 0;
+    $("updBox").hidden = !r.update;
+    if (r.update) $("updText").textContent = t("updText", { v: r.update, c: r.version });
     return r;
   } catch {
     $("lost").classList.add("show");
     ping.failed = (ping.failed || 0) + 1;
-    if (ping.failed >= 3) window.close();
+    if (ping.failed >= 3 && !state.updating) window.close();
     return null;
   }
 }
