@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 internal static class Updater
 {
     private const string Repo = "Nalathan01/FS25-Mod-Inventory";
-    private const string AssetName = "FS25 Mod Inventory.exe";
+    private const string AssetName = "FS25.Mod.Inventory.exe";
     private const string Agent = "FS25ModInventory";
 
     private static string latest;
