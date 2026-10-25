@@ -182,11 +182,73 @@ internal static class AppEnv
             doc.Load(GameSettingsPath);
             XmlElement node = doc.SelectSingleNode("//modsDirectoryOverride") as XmlElement;
             if (node == null) return null;
+            if (node.HasAttribute("active") && !string.Equals(node.GetAttribute("active").Trim(), "true", StringComparison.OrdinalIgnoreCase)) return null;
             string dir = node.GetAttribute("directory");
             if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir)) return null;
             return dir;
         }
         catch (Exception) { return null; }
+    }
+
+    public static string DefaultModsFolder()
+    {
+        return Path.Combine(Path.GetDirectoryName(GameSettingsPath), "mods");
+    }
+
+    public static string ConfiguredModsFolder()
+    {
+        string overrideDir = ActiveModsDirectoryOverride();
+        return !string.IsNullOrEmpty(overrideDir) ? overrideDir : DefaultModsFolder();
+    }
+
+    private static string lastLogPath;
+    private static DateTime lastLogStamp;
+    private static string lastLogFolder;
+
+    public static string LastLoggedModsFolder()
+    {
+        string logPath = Path.Combine(Path.GetDirectoryName(GameSettingsPath), "log.txt");
+        if (!File.Exists(logPath)) return null;
+        try
+        {
+            DateTime stamp = File.GetLastWriteTimeUtc(logPath);
+            if (logPath == lastLogPath && stamp == lastLogStamp) return lastLogFolder;
+            string found = null;
+            using (FileStream fs = new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+            using (StreamReader reader = new StreamReader(fs, Encoding.UTF8, true))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    int idx = line.IndexOf("Mod Directory:", StringComparison.Ordinal);
+                    if (idx >= 0) found = line.Substring(idx + "Mod Directory:".Length).Trim();
+                }
+            }
+            if (!string.IsNullOrEmpty(found))
+            {
+                found = found.Replace('/', '\\').TrimEnd('\\');
+                if (!Directory.Exists(found)) found = null;
+            }
+            lastLogPath = logPath;
+            lastLogStamp = stamp;
+            lastLogFolder = found;
+            return found;
+        }
+        catch (Exception) { return null; }
+    }
+
+    public static List<string> CandidateModsFolders()
+    {
+        List<string> result = new List<string>();
+        foreach (string f in new string[] { ConfiguredModsFolder(), LastLoggedModsFolder(), DefaultModsFolder() })
+        {
+            if (string.IsNullOrEmpty(f)) continue;
+            string norm = f.TrimEnd('\\');
+            bool known = false;
+            foreach (string r in result) if (string.Equals(r, norm, StringComparison.OrdinalIgnoreCase)) known = true;
+            if (!known) result.Add(norm);
+        }
+        return result;
     }
 
     public static string FindInstallPath()

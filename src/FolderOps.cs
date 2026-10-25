@@ -69,9 +69,20 @@ internal static class FolderOps
             ctx.Folder = karteDir;
             return ctx;
         }
-        string overrideDir = AppEnv.ActiveModsDirectoryOverride();
         ctx.Kind = "Spielordner";
-        ctx.Folder = !string.IsNullOrEmpty(overrideDir) ? overrideDir : Path.Combine(Savegames.Root, "mods");
+        ctx.Folder = AppEnv.ConfiguredModsFolder();
+        if (!string.IsNullOrEmpty(mapId) && mapId.Contains("."))
+        {
+            string mapMod = mapId.Split('.')[0];
+            foreach (string candidate in AppEnv.CandidateModsFolders())
+            {
+                if (File.Exists(Path.Combine(candidate, mapMod + ".zip")) || Directory.Exists(Path.Combine(candidate, mapMod)))
+                {
+                    ctx.Folder = candidate;
+                    break;
+                }
+            }
+        }
         return ctx;
     }
 
