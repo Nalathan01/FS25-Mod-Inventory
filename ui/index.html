@@ -76,11 +76,16 @@ button { font: inherit; color: inherit; }
 .brand p { margin: 0; font-size: 12px; color: var(--muted); }
 .rail-label { padding: 6px 20px 8px; font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 .sg-list { overflow-y: auto; padding: 0 12px 16px; display: flex; flex-direction: column; gap: 6px; }
-.rail-foot { margin-top: auto; padding: 14px 16px 16px; }
+.rail-foot { margin-top: auto; padding: 14px 16px 16px; display: grid; gap: 12px; }
 .upd-box { background: var(--accent-soft); border: 1px solid rgba(224,166,58,0.35); border-radius: 12px; padding: 10px 12px; display: grid; gap: 8px; }
 .upd-box b { font-size: 13px; }
 .upd-box span { font-size: 12.5px; color: var(--ink-2); }
-.rail-foot[hidden] { display: none; }
+.upd-box[hidden] { display: none; }
+.browser-row { display: grid; gap: 6px; }
+.browser-row label { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); font-weight: 600; padding-left: 4px; }
+.browser-row select { font: inherit; font-size: 13px; color: var(--ink); background: var(--surface); border: 1px solid var(--line-soft); border-radius: 10px; padding: 8px 10px; cursor: pointer; }
+.browser-row select:hover { border-color: #3c434a; }
+.browser-row select option { background: var(--surface); color: var(--ink); }
 .sg {
   display: grid;
   grid-template-columns: 52px 1fr;
@@ -365,6 +370,8 @@ button { font: inherit; color: inherit; }
 .hist-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
 .hist-head span { color: var(--ink-2); font-size: 12.5px; }
 .mini .restored { font-size: 11.5px; color: var(--muted); }
+.mini .stays { font-size: 11px; color: #8fb8ee; border: 1px solid rgba(57,135,229,0.35); border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+.note ul { margin: 6px 0 0; padding-left: 18px; }
 .mini button { padding: 0 10px; height: 28px; font-size: 12px; }
 
 .toast {
@@ -451,7 +458,10 @@ button { font: inherit; color: inherit; }
   </div>
   <div class="rail-label" data-i18n="savegames"></div>
   <div class="sg-list" id="sgList"></div>
-  <div class="rail-foot" id="updBox" hidden><div class="upd-box"><div><b data-i18n="updTitle"></b><br><span id="updText"></span></div><button class="btn primary" id="updGo" data-i18n="updNow"></button></div></div>
+  <div class="rail-foot">
+    <div class="upd-box" id="updBox" hidden><div><b data-i18n="updTitle"></b><br><span id="updText"></span></div><button class="btn primary" id="updGo" data-i18n="updNow"></button></div>
+    <div class="browser-row"><label for="browserSel" data-i18n="browserLabel"></label><select id="browserSel"></select></div>
+  </div>
 </aside>
 
 <div class="main" id="main">
@@ -501,6 +511,7 @@ button { font: inherit; color: inherit; }
 <div class="modal" id="modal">
   <div class="modal-head"><h3 id="modalTitle"></h3><p id="modalText"></p></div>
   <div class="choice" id="modalChoice"></div>
+  <div id="modalNote"></div>
   <div class="modal-list" id="modalList"></div>
   <div class="modal-foot">
     <button class="btn ghost" id="modalCancel" data-i18n="cancel"></button>
@@ -528,13 +539,15 @@ button { font: inherit; color: inherit; }
 
 <div class="tooltip" id="tooltip"></div>
 <div class="toast" id="toast"></div>
-<div class="lost" id="lost"><div><h3 data-i18n="lostTitle"></h3><p data-i18n="lostText"></p></div></div>
+<div class="lost" id="lost"><div><h3 id="lostTitle" data-i18n="lostTitle"></h3><p id="lostText" data-i18n="lostText"></p></div></div>
 
 <script>
 const token = new URLSearchParams(location.search).get("t");
 
 const I18N = {
   de: {
+    keptHead: "{k} von {n} bleiben im Mods-Ordner, weil sie noch gebraucht werden:", keptNone: "Keiner davon kann aus dem Mods-Ordner, weil alle noch gebraucht werden:", keptBySg: "{n} aktiv im Spielstand {x}", keptByDep: "{n} als Abhängigkeit anderer Mods", keptTail: "Sie werden trotzdem in diesem Spielstand deaktiviert.", stays: "bleibt im Ordner", disableMove: "Deaktivieren und {n} auslagern",
+    browserLabel: "Öffnen in", browserAuto: "Edge-Fenster", browserDefault: "Standardbrowser", browserTab: "Tab", browserSwitch: "Wird im gewählten Browser neu geöffnet.", reopenTitle: "Neu geöffnet", reopenText: "FS25 Mod Inventory läuft jetzt in einem neuen Fenster. Dieses hier kannst du schließen.",
     updTitle: "Update verfügbar", updText: "Version {v} ist da, du hast {c}.", updNow: "Jetzt aktualisieren", updLoading: "Update wird geladen, das Tool startet gleich neu.", updHash: "Die geladene Datei stimmt nicht mit GitHub überein und wurde verworfen.", updFailed: "Update fehlgeschlagen: {a}",
     brandSub: "Was dein Spielstand wirklich nutzt", savegames: "Spielstände", loadingSg: "Spielstand wird geladen",
     search: "Mod suchen", history: "Verlauf", gameRunningHint: "Spiel läuft. Bitte erst beenden.", clearSel: "Auswahl aufheben",
@@ -599,6 +612,8 @@ const I18N = {
     eArchiveExists: "Im Archiv liegt schon ein Eintrag mit diesem Namen: {x}", eSourceGone: "Quelle nicht mehr vorhanden: {x}"
   },
   en: {
+    keptHead: "{k} of {n} stay in the mods folder because they are still needed:", keptNone: "None of them can leave the mods folder, all are still needed:", keptBySg: "{n} active in savegame {x}", keptByDep: "{n} as a dependency of other mods", keptTail: "They are still disabled in this savegame.", stays: "stays in folder", disableMove: "Disable and move {n} out",
+    browserLabel: "Open in", browserAuto: "Edge window", browserDefault: "Default browser", browserTab: "tab", browserSwitch: "Reopening in the selected browser.", reopenTitle: "Reopened", reopenText: "FS25 Mod Inventory now runs in a new window. You can close this one.",
     updTitle: "Update available", updText: "Version {v} is out, you have {c}.", updNow: "Update now", updLoading: "Downloading the update, the tool restarts in a moment.", updHash: "The downloaded file does not match GitHub and was discarded.", updFailed: "Update failed: {a}",
     brandSub: "What your savegame really uses", savegames: "Savegames", loadingSg: "Loading savegame",
     search: "Search mods", history: "History", gameRunningHint: "The game is running. Please close it first.", clearSel: "Clear selection",
@@ -663,6 +678,8 @@ const I18N = {
     eArchiveExists: "The archive already contains an item with this name: {x}", eSourceGone: "Source no longer exists: {x}"
   },
   fr: {
+    keptHead: "{k} sur {n} restent dans le dossier des mods, car ils sont encore utilisés :", keptNone: "Aucun ne peut quitter le dossier des mods, tous sont encore utilisés :", keptBySg: "{n} actifs dans la partie {x}", keptByDep: "{n} comme dépendance d'autres mods", keptTail: "Ils sont tout de même désactivés dans cette partie.", stays: "reste dans le dossier", disableMove: "Désactiver et retirer {n}",
+    browserLabel: "Ouvrir dans", browserAuto: "Fenêtre Edge", browserDefault: "Navigateur par défaut", browserTab: "onglet", browserSwitch: "Réouverture dans le navigateur choisi.", reopenTitle: "Rouvert", reopenText: "FS25 Mod Inventory s'exécute maintenant dans une nouvelle fenêtre. Vous pouvez fermer celle-ci.",
     updTitle: "Mise à jour disponible", updText: "La version {v} est sortie, vous avez la {c}.", updNow: "Mettre à jour", updLoading: "Téléchargement de la mise à jour, l'outil redémarre dans un instant.", updHash: "Le fichier téléchargé ne correspond pas à GitHub et a été supprimé.", updFailed: "Échec de la mise à jour : {a}",
     brandSub: "Ce que votre partie utilise vraiment", savegames: "Parties", loadingSg: "Chargement de la partie",
     search: "Rechercher un mod", history: "Historique", gameRunningHint: "Le jeu est en cours. Veuillez d'abord le fermer.", clearSel: "Effacer la sélection",
@@ -1037,10 +1054,37 @@ function openModal() {
     + optHtml("file", "remove", state.fileAction, t("optRemoveTitle"),
       t("optRemoveText", { archive: archive ? `: <code>${esc(archive)}</code>` : "", shared: shared ? t("optShared") : "" }))
     + optHtml("file", "keep", state.fileAction, t("optKeepTitle"), t("optKeepText"));
-  bindOpts($("modalChoice"), (g, v) => { state.fileAction = v; });
-  $("modalList").innerHTML = mods.map(m => `<div class="mini">${iconHtml(m.Name, m.Title, m.HasIcon, state.usage.Id)}<span class="nm">${esc(m.Title)}</span><span class="sz">${m.SizeMB ? fmtSize(m.SizeMB) : ""}</span></div>`).join("");
+  bindOpts($("modalChoice"), (g, v) => { state.fileAction = v; renderPreview(); });
+  state.preview = null;
+  renderPreview();
   $("overlay").classList.add("show");
   $("modal").classList.add("show");
+  const sg = state.usage.Id;
+  api("/api/folder/preview", { sg, mods: mods.map(m => m.Name) })
+    .then(p => { if (state.usage && state.usage.Id === sg && $("modal").classList.contains("show")) { state.preview = p; renderPreview(); } })
+    .catch(() => {});
+}
+
+function renderPreview() {
+  const mods = state.usage.Mods.filter(m => state.selected.has(m.Name));
+  const p = state.fileAction === "remove" ? state.preview : null;
+  const kept = new Map(p ? p.kept.map(k => [k.Name, k]) : []);
+  $("modalList").innerHTML = mods.map(m => `<div class="mini">${iconHtml(m.Name, m.Title, m.HasIcon, state.usage.Id)}<span class="nm">${esc(m.Title)}</span>${kept.has(m.Name) ? `<span class="stays">${esc(t("stays"))}</span>` : ""}<span class="sz">${m.SizeMB ? fmtSize(m.SizeMB) : ""}</span></div>`).join("");
+  let note = "";
+  if (p && p.kept.length) {
+    const bySg = new Map();
+    let deps = 0;
+    p.kept.forEach(k => {
+      if (k.Savegames.length) k.Savegames.forEach(x => bySg.set(x, (bySg.get(x) || 0) + 1));
+      else if (k.Mods.length) deps++;
+    });
+    const lines = [...bySg.entries()].sort((a, b) => b[1]-a[1]).map(([x, n]) => `<li>${esc(t("keptBySg", { n: fmt(n), x }))}</li>`);
+    if (deps) lines.push(`<li>${esc(t("keptByDep", { n: fmt(deps) }))}</li>`);
+    const head = p.removable.length ? t("keptHead", { k: fmt(p.kept.length), n: fmt(mods.length) }) : t("keptNone");
+    note = `<div class="note" style="margin:8px 24px 4px">${esc(head)}<ul>${lines.join("")}</ul>${esc(t("keptTail"))}</div>`;
+  }
+  $("modalNote").innerHTML = note;
+  $("modalOk").textContent = p && p.removable.length ? t("disableMove", { n: fmt(p.removable.length) }) : t("disable");
 }
 function closeModal() { $("modal").classList.remove("show"); $("fmodal").classList.remove("show"); if (!$("drawer").classList.contains("show")) $("overlay").classList.remove("show"); }
 
@@ -1267,7 +1311,7 @@ $("updGo").onclick = async () => {
   toast(t("updLoading"));
   try {
     await api("/api/update", {});
-    setTimeout(() => window.close(), 800);
+    reopened();
   } catch (e) {
     state.updating = false;
     $("updGo").disabled = false;
@@ -1297,6 +1341,40 @@ async function ping() {
   }
 }
 
+function reopened() {
+  state.updating = true;
+  $("lostTitle").textContent = t("reopenTitle");
+  $("lostText").textContent = t("reopenText");
+  $("lost").classList.add("show");
+  setTimeout(() => window.close(), 800);
+}
+
+async function loadBrowsers() {
+  try {
+    const r = await api("/api/browsers");
+    const tab = app => app ? "" : ` (${t("browserTab")})`;
+    const opts = [{ id: "auto", name: t("browserAuto") }, { id: "default", name: t("browserDefault") + (r.defaultName ? `: ${r.defaultName}` : "") + tab(r.defaultApp) }]
+      .concat(r.list.map(b => ({ id: b.Id, name: b.Name + tab(b.AppWindow) })));
+    if (!opts.some(o => o.id === r.choice)) r.choice = "auto";
+    $("browserSel").innerHTML = opts.map(o => `<option value="${esc(o.id)}"${o.id === r.choice ? " selected" : ""}>${esc(o.name)}</option>`).join("");
+    $("browserSel").dataset.current = r.choice;
+  } catch { $("browserSel").parentNode.hidden = true; }
+}
+
+$("browserSel").onchange = async () => {
+  const sel = $("browserSel");
+  try {
+    toast(t("browserSwitch"));
+    await api("/api/browser", { id: sel.value, reopen: true });
+    reopened();
+  } catch (e) {
+    sel.value = sel.dataset.current;
+    toast(e.message, true);
+  }
+};
+
+window.addEventListener("pagehide", () => { if (!state.updating) navigator.sendBeacon("/api/bye?t=" + token); });
+
 (async () => {
   const urlLang = new URLSearchParams(location.search).get("lang");
   const first = await ping();
@@ -1304,6 +1382,7 @@ async function ping() {
   applyStaticTexts();
   renderLoading();
   setInterval(ping, 4000);
+  loadBrowsers();
   try {
     state.savegames = await api("/api/savegames");
     renderSavegames();

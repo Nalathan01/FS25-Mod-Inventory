@@ -28,6 +28,7 @@ internal sealed class InventurServer
     private byte[] html;
     private DateTime lastPing = DateTime.Now;
     private bool firstPingSeen;
+    private DateTime byeAt = DateTime.MinValue;
     private bool running = true;
     private bool restart;
 
@@ -44,7 +45,7 @@ internal sealed class InventurServer
         string url = prefix + "?t=" + token;
         AppEnv.Log("ModInventory", "Gestartet auf " + prefix);
 
-        if (!noBrowser) OpenWindow(url);
+        if (!noBrowser) Browser.Open(url);
         else if (!string.IsNullOrEmpty(urlFile)) File.WriteAllText(urlFile, url, new UTF8Encoding(false));
 
         while (running)
@@ -53,7 +54,8 @@ internal sealed class InventurServer
             while (!task.Wait(1000))
             {
                 double idle = DateTime.Now.Subtract(lastPing).TotalSeconds;
-                if ((firstPingSeen && idle > 20) || (!firstPingSeen && idle > 120)) { running = false; break; }
+                bool closed = byeAt > DateTime.MinValue && lastPing <= byeAt && DateTime.Now.Subtract(byeAt).TotalSeconds > 6;
+                if (closed || (firstPingSeen && idle > 180) || (!firstPingSeen && idle > 120)) { running = false; break; }
             }
             if (!running) break;
             Handle(task.Result);
@@ -83,30 +85,6 @@ internal sealed class InventurServer
                 s.CopyTo(ms);
                 return ms.ToArray();
             }
-        }
-    }
-
-    private static void OpenWindow(string url)
-    {
-        string pf86 = Environment.GetEnvironmentVariable("ProgramFiles(x86)");
-        string pf = Environment.GetEnvironmentVariable("ProgramFiles");
-        string edge = null;
-        foreach (string root in new string[] { pf86, pf })
-        {
-            if (string.IsNullOrEmpty(root)) continue;
-            string candidate = Path.Combine(root, @"Microsoft\Edge\Application\msedge.exe");
-            if (File.Exists(candidate)) { edge = candidate; break; }
-        }
-        if (edge != null)
-        {
-            string profileDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"FS25ModInventory\edge");
-            ProcessStartInfo psi = new ProcessStartInfo(edge, "--app=" + url + " --user-data-dir=\"" + profileDir + "\" --window-size=1480,940 --no-first-run");
-            psi.UseShellExecute = false;
-            Process.Start(psi);
-        }
-        else
-        {
-            Process.Start(url);
         }
     }
 
@@ -159,6 +137,12 @@ internal sealed class InventurServer
                 SendJson(ctx, 200, Undo(folder, AppEnv.GetString(body, "date"), AppEnv.GetStrings(body, "mods")));
             }
             else if (path == "/api/folder") SendJson(ctx, 200, FolderResponse(req.QueryString["sg"], req.QueryString["detail"] == "1"));
+            else if (path == "/api/folder/preview")
+            {
+                Dictionary<string, object> body = ReadBody(req);
+                string folder = Savegames.FolderFor(AppEnv.GetString(body, "sg"));
+                SendJson(ctx, 200, FolderOps.Preview(folder, AppEnv.GetStrings(body, "mods")));
+            }
             else if (path == "/api/folder/clean")
             {
                 Dictionary<string, object> body = ReadBody(req);
@@ -188,6 +172,23 @@ internal sealed class InventurServer
                 restart = true;
                 running = false;
             }
+            else if (path == "/api/bye")
+            {
+                byeAt = DateTime.Now;
+                SendJson(ctx, 200, Obj("ok", true));
+            }
+            else if (path == "/api/browsers") SendJson(ctx, 200, BrowserList());
+            else if (path == "/api/browser")
+            {
+                Dictionary<string, object> body = ReadBody(req);
+                string id = AppEnv.GetString(body, "id");
+                if (string.IsNullOrEmpty(id)) id = Browser.Auto;
+                Browser.Choice = id;
+                AppEnv.Log("Browser", "Auswahl: " + id);
+                SendJson(ctx, 200, Obj("ok", true));
+                restart = AppEnv.GetBool(body, "reopen");
+                if (restart) running = false;
+            }
             else if (path == "/api/quit")
             {
                 SendJson(ctx, 200, Obj("ok", true));
@@ -200,6 +201,25 @@ internal sealed class InventurServer
             AppEnv.Log("ModInventory", "Fehler bei " + path + ": " + ex.Message);
             try { SendJson(ctx, 500, Obj("error", ex.Message)); } catch (Exception) { }
         }
+    }
+
+    private static Dictionary<string, object> BrowserList()
+    {
+        List<object> list = new List<object>();
+        foreach (BrowserInfo b in Browser.Installed())
+        {
+            Dictionary<string, object> d = new Dictionary<string, object>();
+            d["Id"] = b.Id;
+            d["Name"] = b.Name;
+            d["AppWindow"] = b.AppWindow;
+            list.Add(d);
+        }
+        BrowserInfo def = Browser.DefaultBrowser();
+        Dictionary<string, object> r = Obj("list", list);
+        r["choice"] = Browser.Choice;
+        r["defaultName"] = def == null ? null : def.Name;
+        r["defaultApp"] = def != null && def.AppWindow;
+        return r;
     }
 
     private static Dictionary<string, object> Obj(string key, object value)

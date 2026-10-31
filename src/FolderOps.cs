@@ -138,6 +138,11 @@ internal static class FolderOps
 
     public static FolderPlan Plan(string savegameFolder, bool detailed)
     {
+        return Plan(savegameFolder, detailed, null);
+    }
+
+    public static FolderPlan Plan(string savegameFolder, bool detailed, ICollection<string> assumeDisabled)
+    {
         SavegameInfo info = Savegames.Info(savegameFolder);
         if (info == null) throw new InvalidOperationException("Spielstand nicht lesbar: " + savegameFolder);
         FolderContext context = Context(savegameFolder, info.MapId);
@@ -151,6 +156,7 @@ internal static class FolderOps
         foreach (SharingSavegame s in sharing)
         {
             List<string> names = Savegames.ActiveModNames(s.Folder);
+            if (assumeDisabled != null && string.Equals(s.Folder, savegameFolder, StringComparison.OrdinalIgnoreCase)) names.RemoveAll(n => assumeDisabled.Contains(n));
             if (!string.IsNullOrEmpty(s.MapId)) names.Add(s.MapId.Split('.')[0]);
             names.AddRange(Usage.AlwaysProtected.Keys);
             foreach (string n in names)
@@ -349,6 +355,41 @@ internal static class FolderOps
             AppEnv.Log("ModUsage", Path.GetFileName(savegameFolder) + ": " + restored.Count.ToString(CultureInfo.InvariantCulture) + " Mods wieder aktiviert: " + string.Join(", ", restored.ToArray()));
         }
         return restored;
+    }
+
+    public static Dictionary<string, object> Preview(string savegameFolder, List<string> modNames)
+    {
+        HashSet<string> selected = new HashSet<string>(modNames, StringComparer.OrdinalIgnoreCase);
+        FolderPlan plan = Plan(savegameFolder, false, selected);
+        HashSet<string> candidates = new HashSet<string>(plan.Candidates.Select(c => c.Name), StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, string> sgNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (SharingSavegame s in plan.Sharing) sgNames[s.Id] = s.Name + " (" + s.Id + ")";
+        List<string> removable = new List<string>();
+        List<object> kept = new List<object>();
+        foreach (string n in modNames)
+        {
+            if (candidates.Contains(n)) { removable.Add(n); continue; }
+            List<string> needed;
+            if (!plan.NeededBy.TryGetValue(n, out needed)) continue;
+            List<string> savegames = new List<string>();
+            List<string> mods = new List<string>();
+            foreach (string reason in needed)
+            {
+                string sgName;
+                if (sgNames.TryGetValue(reason, out sgName)) { if (!savegames.Contains(sgName)) savegames.Add(sgName); }
+                else if (reason.StartsWith("Abhaengigkeit von ")) mods.Add(reason.Substring("Abhaengigkeit von ".Length));
+            }
+            Dictionary<string, object> d = new Dictionary<string, object>();
+            d["Name"] = n;
+            d["Savegames"] = savegames;
+            d["Mods"] = mods;
+            kept.Add(d);
+        }
+        Dictionary<string, object> result = new Dictionary<string, object>();
+        result["removable"] = removable;
+        result["kept"] = kept;
+        result["sharing"] = plan.Sharing.Count;
+        return result;
     }
 
     public static Dictionary<string, object> Cleanup(string savegameFolder, List<string> modNames, string copyAction)
