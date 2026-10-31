@@ -28,7 +28,9 @@ internal sealed class ModProfile
     public string Title;
     public bool IsMap;
     public int StoreItemCount;
+    public int VehicleItemCount;
     public bool HasScripts;
+    public bool HasGlobalScripts;
     public List<string> FillTypes = new List<string>();
     public List<string> Dependencies = new List<string>();
     public long SizeBytes;
@@ -137,6 +139,41 @@ internal static class Usage
         return null;
     }
 
+    private static string ZipRootName(ZipArchive zip, string entryPath)
+    {
+        if (zip == null || string.IsNullOrEmpty(entryPath)) return null;
+        string normalized = entryPath.Replace('\\', '/').TrimStart('/');
+        foreach (ZipArchiveEntry entry in zip.Entries)
+        {
+            if (!string.Equals(entry.FullName.Replace('\\', '/'), normalized, StringComparison.OrdinalIgnoreCase)) continue;
+            using (Stream st = entry.Open()) return RootName(st);
+        }
+        return null;
+    }
+
+    private static string FileRootName(string path)
+    {
+        if (!File.Exists(path)) return null;
+        using (Stream st = File.OpenRead(path)) return RootName(st);
+    }
+
+    private static string RootName(Stream st)
+    {
+        try
+        {
+            XmlReaderSettings settings = new XmlReaderSettings();
+            settings.DtdProcessing = DtdProcessing.Ignore;
+            using (XmlReader reader = XmlReader.Create(st, settings))
+            {
+                reader.MoveToContent();
+                string type = (reader.GetAttribute("type") ?? "").ToLowerInvariant();
+                if (reader.LocalName == "vehicle" && (type.Contains("pallet") || type.Contains("bigbag"))) return "pallet";
+                return reader.LocalName;
+            }
+        }
+        catch (Exception) { return null; }
+    }
+
     public static ModLocation FindMod(string modName, string folder)
     {
         if (!string.IsNullOrEmpty(folder))
@@ -200,11 +237,17 @@ internal static class Usage
             prof.Author = TrimmedText(md, "author");
             prof.IconFilename = TrimmedText(md, "iconFilename");
             prof.StoreItemCount = md.SelectNodes("storeItems/storeItem").Count;
+            foreach (XmlElement item in md.SelectNodes("storeItems/storeItem[@xmlFilename]"))
+            {
+                string root = location.IsDir ? FileRootName(Path.Combine(location.Path, item.GetAttribute("xmlFilename"))) : ZipRootName(zip, item.GetAttribute("xmlFilename"));
+                if (root == "vehicle" || root == "handTool") prof.VehicleItemCount++;
+            }
             int scripts = md.SelectNodes("extraSourceFiles/sourceFile").Count
                 + md.SelectNodes("specializations/specialization").Count
                 + md.SelectNodes("placeableSpecializations/specialization").Count
                 + md.SelectNodes("handToolSpecializations/specialization").Count;
             prof.HasScripts = scripts > 0;
+            prof.HasGlobalScripts = md.SelectNodes("extraSourceFiles/sourceFile").Count > 0;
             foreach (XmlNode dep in md.SelectNodes("dependencies/dependency"))
             {
                 string d = dep.InnerText.Trim();
@@ -507,7 +550,7 @@ internal static class Usage
                 if (dataFiles.Count == 0 && dataElements.Count == 0) reasons[n].Add("keine eigenen Daten im Spielstand gefunden");
                 continue;
             }
-            status[n] = "Unbenutzt";
+            status[n] = p.VehicleItemCount > 0 ? "Fahrzeug" : (p.HasGlobalScripts ? "Script" : "Unbenutzt");
             reasons[n].Add(p.StoreItemCount.ToString(CultureInfo.InvariantCulture) + " Shop-Artikel, keiner davon im Spielstand");
             if (salesText != null && salesText.Contains("/" + n + "/")) reasons[n].Add("hat gerade ein Angebot im Gebrauchtmarkt, das beim Deaktivieren verschwindet");
             if (p.HasScripts) reasons[n].Add("enthaelt zusaetzlich Scripts, vor dem Deaktivieren pruefen");
@@ -525,7 +568,7 @@ internal static class Usage
                 foreach (string dep in profiles[n].Dependencies)
                 {
                     if (!allSet.Contains(dep)) continue;
-                    if (status[dep] == "Unbenutzt" || status[dep] == "Script")
+                    if (status[dep] == "Unbenutzt" || status[dep] == "Script" || status[dep] == "Fahrzeug")
                     {
                         status[dep] = "Abhaengigkeit";
                         reasons[dep].Clear();

@@ -29,6 +29,7 @@
   --s-indirect: #199e70;
   --s-script: #c98500;
   --s-unused: #d55181;
+  --s-vehicle: #8a6fd1;
   --s-other: #5f625d;
   --radius: 14px;
   --font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
@@ -435,6 +436,12 @@ button { font: inherit; color: inherit; }
 .mini.on .cb svg { opacity: 1; }
 .kind { font-size: 11px; padding: 1px 7px; border-radius: 6px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
 .kind.copy { color: #ffd27a; border-color: rgba(250,178,25,0.4); }
+.kind.new { color: #8fb8ee; border-color: rgba(57,135,229,0.4); }
+.sect { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 10px 0 2px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.sect:first-child { margin-top: 0; }
+.sect button { text-transform: none; letter-spacing: 0; }
+.newhint { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; color: #8fb8ee; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+.newhint:hover { text-decoration: underline; }
 .hist-title { font-weight: 600; font-size: 13.5px; }
 
 @media (max-width: 980px) {
@@ -546,6 +553,7 @@ const token = new URLSearchParams(location.search).get("t");
 
 const I18N = {
   de: {
+    newSect: "Neu dazugekommen, in keinem Spielstand eingeschaltet", oldSect: "Lädt kein Spielstand", kindNew: "neu", activate: "Einschalten", activateAll: "Alle einschalten", activated: "{n} Mods in diesem Spielstand eingeschaltet", newHint: "{n} neue Mods sind noch in keinem Spielstand eingeschaltet", newDirHint: "Entpackt, nur im Spiel einschaltbar",
     keptHead: "{k} von {n} bleiben im Mods-Ordner, weil sie noch gebraucht werden:", keptNone: "Keiner davon kann aus dem Mods-Ordner, weil alle noch gebraucht werden:", keptBySg: "{n} aktiv im Spielstand {x}", keptByDep: "{n} als Abhängigkeit anderer Mods", keptTail: "Sie werden trotzdem in diesem Spielstand deaktiviert.", stays: "bleibt im Ordner", disableMove: "Deaktivieren und {n} auslagern",
     browserLabel: "Öffnen in", browserAuto: "Edge-Fenster", browserDefault: "Standardbrowser", browserTab: "Tab", browserSwitch: "Wird im gewählten Browser neu geöffnet.", reopenTitle: "Neu geöffnet", reopenText: "FS25 Mod Inventory läuft jetzt in einem neuen Fenster. Dieses hier kannst du schließen.",
     updTitle: "Update verfügbar", updText: "Version {v} ist da, du hast {c}.", updNow: "Jetzt aktualisieren", updLoading: "Update wird geladen, das Tool startet gleich neu.", updHash: "Die geladene Datei stimmt nicht mit GitHub überein und wurde verworfen.", updFailed: "Update fehlgeschlagen: {a}",
@@ -555,7 +563,8 @@ const I18N = {
     folderOkDefault: "Aus dem Ordner nehmen", close: "Schließen", lostTitle: "Verbindung getrennt",
     lostText: "Der Hintergrunddienst läuft nicht mehr. Bitte FS25 Mod Inventory neu starten.",
     gUnused: "Unbenutzt", gUnusedDesc: "Aktiv, aber nichts davon steht, fährt oder lagert in diesem Spielstand. Sichere Kandidaten zum Deaktivieren.",
-    gScript: "Scripts", gScriptDesc: "Scripts platzieren nichts, ihre Nutzung lässt sich nicht messen. Hier entscheidest du selbst. Eine Markierung zeigt, ob ein Script eigene Daten im Spielstand hinterlegt hat.",
+    gVehicle: "Fahrzeuge und Geräte", gVehicleDesc: "Nichts davon gekauft. Sie bleiben aktiv, damit du sie später im Shop kaufen kannst. Abschalten nur einzeln, wenn du sicher bist.",
+    gScript: "Scripts", gScriptDesc: "Scripts und Mods mit eigenen Scripts. Ihre Nutzung lässt sich nicht sicher messen, deshalb entscheidest du hier selbst und einzeln. Eine Markierung zeigt, ob ein Script eigene Daten im Spielstand hinterlegt hat.",
     gUsed: "Benutzt", gUsedDesc: "Gebäude, Fahrzeuge oder Objekte aus diesen Mods stehen im Spielstand. Geschützt.",
     gIndirect: "Indirekt", gIndirectDesc: "Kein Objekt platziert, aber ein Fülltyp dieses Mods liegt als Bestand im Spielstand. Geschützt.",
     gDep: "Abhängigkeit", gDepDesc: "Wird von einem benutzten Mod, einem aktiven Script oder der Karte vorausgesetzt. Geschützt.",
@@ -612,6 +621,7 @@ const I18N = {
     eArchiveExists: "Im Archiv liegt schon ein Eintrag mit diesem Namen: {x}", eSourceGone: "Quelle nicht mehr vorhanden: {x}"
   },
   en: {
+    newSect: "Newly added, not enabled in any savegame", oldSect: "Not loaded by any savegame", kindNew: "new", activate: "Enable", activateAll: "Enable all", activated: "{n} mods enabled in this savegame", newHint: "{n} new mods are not enabled in any savegame yet", newDirHint: "Unpacked, can only be enabled in the game",
     keptHead: "{k} of {n} stay in the mods folder because they are still needed:", keptNone: "None of them can leave the mods folder, all are still needed:", keptBySg: "{n} active in savegame {x}", keptByDep: "{n} as a dependency of other mods", keptTail: "They are still disabled in this savegame.", stays: "stays in folder", disableMove: "Disable and move {n} out",
     browserLabel: "Open in", browserAuto: "Edge window", browserDefault: "Default browser", browserTab: "tab", browserSwitch: "Reopening in the selected browser.", reopenTitle: "Reopened", reopenText: "FS25 Mod Inventory now runs in a new window. You can close this one.",
     updTitle: "Update available", updText: "Version {v} is out, you have {c}.", updNow: "Update now", updLoading: "Downloading the update, the tool restarts in a moment.", updHash: "The downloaded file does not match GitHub and was discarded.", updFailed: "Update failed: {a}",
@@ -621,7 +631,8 @@ const I18N = {
     folderOkDefault: "Remove from folder", close: "Close", lostTitle: "Connection lost",
     lostText: "The background service has stopped. Please restart FS25 Mod Inventory.",
     gUnused: "Unused", gUnusedDesc: "Active, but nothing from these mods stands, drives or is stored in this savegame. Safe candidates to disable.",
-    gScript: "Scripts", gScriptDesc: "Scripts don't place anything, so their use can't be measured. You decide here. A badge shows whether a script has stored its own data in the savegame.",
+    gVehicle: "Vehicles and tools", gVehicleDesc: "Nothing bought. They stay active so you can buy them in the shop later. Only switch them off one by one if you are sure.",
+    gScript: "Scripts", gScriptDesc: "Scripts and mods with their own scripts. Their use can't be measured reliably, so you decide here, one by one. A badge shows whether a script has stored its own data in the savegame.",
     gUsed: "Used", gUsedDesc: "Buildings, vehicles or objects from these mods are in the savegame. Protected.",
     gIndirect: "Indirect", gIndirectDesc: "Nothing placed, but a fill type from this mod is stored in the savegame. Protected.",
     gDep: "Dependency", gDepDesc: "Required by a used mod, an active script or the map. Protected.",
@@ -678,6 +689,7 @@ const I18N = {
     eArchiveExists: "The archive already contains an item with this name: {x}", eSourceGone: "Source no longer exists: {x}"
   },
   fr: {
+    newSect: "Nouveaux, activés dans aucune partie", oldSect: "Chargés par aucune partie", kindNew: "nouveau", activate: "Activer", activateAll: "Tout activer", activated: "{n} mods activés dans cette partie", newHint: "{n} nouveaux mods ne sont encore activés dans aucune partie", newDirHint: "Décompressé, activable uniquement dans le jeu",
     keptHead: "{k} sur {n} restent dans le dossier des mods, car ils sont encore utilisés :", keptNone: "Aucun ne peut quitter le dossier des mods, tous sont encore utilisés :", keptBySg: "{n} actifs dans la partie {x}", keptByDep: "{n} comme dépendance d'autres mods", keptTail: "Ils sont tout de même désactivés dans cette partie.", stays: "reste dans le dossier", disableMove: "Désactiver et retirer {n}",
     browserLabel: "Ouvrir dans", browserAuto: "Fenêtre Edge", browserDefault: "Navigateur par défaut", browserTab: "onglet", browserSwitch: "Réouverture dans le navigateur choisi.", reopenTitle: "Rouvert", reopenText: "FS25 Mod Inventory s'exécute maintenant dans une nouvelle fenêtre. Vous pouvez fermer celle-ci.",
     updTitle: "Mise à jour disponible", updText: "La version {v} est sortie, vous avez la {c}.", updNow: "Mettre à jour", updLoading: "Téléchargement de la mise à jour, l'outil redémarre dans un instant.", updHash: "Le fichier téléchargé ne correspond pas à GitHub et a été supprimé.", updFailed: "Échec de la mise à jour : {a}",
@@ -687,7 +699,8 @@ const I18N = {
     folderOkDefault: "Retirer du dossier", close: "Fermer", lostTitle: "Connexion perdue",
     lostText: "Le service en arrière-plan s'est arrêté. Veuillez redémarrer FS25 Mod Inventory.",
     gUnused: "Inutilisés", gUnusedDesc: "Actifs, mais rien de ces mods n'est posé, ne roule ou n'est stocké dans cette partie. Candidats sûrs à la désactivation.",
-    gScript: "Scripts", gScriptDesc: "Les scripts ne posent rien, leur utilisation ne peut donc pas être mesurée. C'est à vous de décider. Un badge indique si un script a enregistré ses propres données dans la partie.",
+    gVehicle: "Véhicules et outils", gVehicleDesc: "Rien n'a été acheté. Ils restent actifs pour que vous puissiez les acheter plus tard en boutique. Ne les désactivez qu'un par un, si vous êtes sûr.",
+    gScript: "Scripts", gScriptDesc: "Scripts et mods avec leurs propres scripts. Leur utilisation ne peut pas être mesurée de façon fiable, c'est donc à vous de décider, un par un. Un badge indique si un script a enregistré ses propres données dans la partie.",
     gUsed: "Utilisés", gUsedDesc: "Des bâtiments, véhicules ou objets de ces mods se trouvent dans la partie. Protégés.",
     gIndirect: "Indirects", gIndirectDesc: "Rien n'est posé, mais un type de remplissage de ce mod est en stock dans la partie. Protégés.",
     gDep: "Dépendances", gDepDesc: "Requis par un mod utilisé, un script actif ou la carte. Protégés.",
@@ -791,14 +804,15 @@ function tEngine(text) {
 
 const GROUPS = [
   { key: "Unbenutzt", label: "gUnused", desc: "gUnusedDesc", color: "var(--s-unused)", pick: true },
-  { key: "Script", label: "gScript", desc: "gScriptDesc", color: "var(--s-script)", pick: true },
+  { key: "Fahrzeug", label: "gVehicle", desc: "gVehicleDesc", color: "var(--s-vehicle)", pick: true, single: true },
+  { key: "Script", label: "gScript", desc: "gScriptDesc", color: "var(--s-script)", pick: true, single: true },
   { key: "Benutzt", label: "gUsed", desc: "gUsedDesc", color: "var(--s-used)", pick: false },
   { key: "Indirekt", label: "gIndirect", desc: "gIndirectDesc", color: "var(--s-indirect)", pick: false },
   { key: "Abhaengigkeit", label: "gDep", desc: "gDepDesc", color: "var(--s-dep)", pick: false },
   { key: "Sonstige", label: "gOther", desc: "gOtherDesc", color: "var(--s-other)", pick: false, members: ["Karte", "DLC", "Gesperrt", "Unbekannt"] }
 ];
-const groupOf = s => (GROUPS.find(g => g.members ? g.members.includes(s) : g.key === s) || GROUPS[5]);
-const pickable = m => !(state.usage && state.usage.FolderMismatch) && ["Unbenutzt", "Script"].includes(m.Status);
+const groupOf = s => (GROUPS.find(g => g.members ? g.members.includes(s) : g.key === s) || GROUPS.find(g => g.key === "Sonstige"));
+const pickable = m => !(state.usage && state.usage.FolderMismatch) && ["Unbenutzt", "Fahrzeug", "Script"].includes(m.Status);
 
 const state = { savegames: [], sg: null, usage: null, selected: new Set(), filter: "all", query: "", gameRunning: false,
   folder: null, folderDetail: null, folderPick: new Set(), fileAction: "remove", copyAction: "Move" };
@@ -945,7 +959,7 @@ function cardHtml(m, g) {
   if (m.SizeMB) tags.push(`<span class="tag">${fmtSize(m.SizeMB)}</span>`);
   if (m.StoreItemCount) tags.push(`<span class="tag">${tn("tagShop", m.StoreItemCount)}</span>`);
   if (m.Status === "Script" && m.Reasons.some(r => r.startsWith("eigene Daten") || r.startsWith("Daten an"))) tags.push(`<span class="tag data">${t("tagData")}</span>`);
-  if (m.Status === "Unbenutzt" && m.HasScripts) tags.push(`<span class="tag warn">${t("tagScripts")}</span>`);
+  if (m.Status !== "Benutzt" && m.HasScripts && m.StoreItemCount > 0) tags.push(`<span class="tag warn">${t("tagScripts")}</span>`);
   if (!m.Active) tags.push(`<span class="tag warn">${t("tagInactive")}</span>`);
   const reasons = m.Reasons.filter(r => !r.startsWith("enthaelt zusaetzlich") && !r.startsWith("keine eigenen Daten"));
   return `<div class="card${canPick ? " pick" : ""}${sel ? " sel" : ""}" data-n="${esc(m.Name)}">
@@ -981,7 +995,7 @@ function renderGroups() {
     if (q) mods = mods.filter(m => (m.Title + " " + m.Name + " " + (m.Author || "")).toLowerCase().includes(q));
     if (!mods.length) continue;
     any = true;
-    mods.sort((a, b) => g.key === "Unbenutzt" ? (b.SizeMB-a.SizeMB) : a.Title.localeCompare(b.Title, LANG));
+    mods.sort((a, b) => g.key === "Unbenutzt" || g.key === "Fahrzeug" ? (b.SizeMB-a.SizeMB) : a.Title.localeCompare(b.Title, LANG));
     const pickIds = mods.filter(pickable).map(m => m.Name);
     const allSel = pickIds.length && pickIds.every(n => state.selected.has(n));
     const compact = !g.pick;
@@ -991,7 +1005,7 @@ function renderGroups() {
           <div class="group-title"><span class="sw" style="background:${g.color}"></span><h3>${t(g.label)}</h3><span class="count">${fmt(mods.length)}</span></div>
           <p class="group-desc">${t(g.desc)}</p>
         </div>
-        ${pickIds.length > 1 ? `<div class="group-actions"><button class="btn" data-all="${g.key}">${allSel ? t("selectNone") : t("selectAll")}</button></div>` : ""}
+        ${pickIds.length > 1 && !g.single ? `<div class="group-actions"><button class="btn" data-all="${g.key}">${allSel ? t("selectNone") : t("selectAll")}</button></div>` : ""}
       </div>
       <div class="grid">${mods.map(m => cardHtml(m, g)).join("")}</div>
     </section>`;
@@ -1181,6 +1195,7 @@ function renderFolderPanel() {
   const n = f.Candidates.length;
   const mb = f.Candidates.reduce((a, c) => a + (c.SizeMB || 0), 0);
   const others = f.Sharing.filter(s => s.Id !== state.sg);
+  const newCount = f.Candidates.filter(c => c.IsNew).length;
   const kindText = f.FolderKind === "Karte" ? t("kindKarte") : t("kindGame");
   const segs = [
     { label: t("segUsed"), n: f.KeptCount, mb: f.KeptMB, color: "var(--s-used)" },
@@ -1194,6 +1209,7 @@ function renderFolderPanel() {
       </div>
       <div class="bar">${segs.map((s, i) => `<div class="seg" style="flex:${s.n};background:${s.color};animation-delay:${i * 60}ms;cursor:default"></div>`).join("")}</div>
       <div class="legend">${segs.map(s => `<button style="cursor:default"><span class="sw" style="background:${s.color}"></span>${s.label} <b>${fmt(s.n)}</b> · ${fmtSize(s.mb)}</button>`).join("")}</div>
+      ${newCount ? `<button class="newhint" id="newHint"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>${esc(t("newHint", { n: fmt(newCount) }))}</button>` : ""}
       ${others.length ? `<div class="share"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M14 20c0-2 1.5-4 4-4 1.5 0 3 1 3 3"/></svg>${t("sharedBy", { names: others.map(o => esc(o.Name || o.Id)).join(", ") })}</div>` : ""}
     </div>
     <div class="folder-side">
@@ -1203,6 +1219,7 @@ function renderFolderPanel() {
     </div>
   </div>`;
   if ($("folderBtn")) $("folderBtn").onclick = openFolderModal;
+  if ($("newHint")) $("newHint").onclick = openFolderModal;
 }
 
 async function openFolderModal() {
@@ -1217,7 +1234,7 @@ async function openFolderModal() {
   try {
     const d = await api(`/api/folder?sg=${encodeURIComponent(state.sg)}&detail=1`);
     state.folderDetail = d;
-    state.folderPick = new Set(d.Candidates.map(c => c.Name));
+    state.folderPick = new Set(d.Candidates.filter(c => !c.IsNew).map(c => c.Name));
     renderFolderModal();
   } catch (e) { closeModal(); toast(e.message, true); }
 }
@@ -1238,11 +1255,22 @@ function renderFolderModal() {
   }
   $("fChoice").innerHTML = choice + (d.FolderKind === "Karte" && !d.Scoped ? `<div class="note" style="margin:6px 0 0">${t("scopedNote")}</div>` : "");
   bindOpts($("fChoice"), (g, v) => { state.copyAction = v; updateFolderFoot(); });
-  $("fList").innerHTML = d.Candidates.map(c => `<div class="mini pickrow${state.folderPick.has(c.Name) ? " on" : ""}" data-n="${esc(c.Name)}">
+  const row = c => `<div class="mini pickrow${state.folderPick.has(c.Name) ? " on" : ""}" data-n="${esc(c.Name)}">
       <span class="cb">${CHECK_SVG}</span>${iconHtml(c.Name, c.Title, c.HasIcon, state.sg)}
       <span class="nm" title="${esc(c.Name)}">${esc(c.Title)}</span>
+      ${c.IsNew ? `<span class="kind new">${esc(t("kindNew"))}</span>` : ""}
       <span class="kind${c.Kind === "Kopie" ? " copy" : ""}">${kindLabel(c.Kind)}</span>
-      <span class="sz">${c.SizeMB ? fmtSize(c.SizeMB) : ""}</span></div>`).join("");
+      <span class="sz">${c.SizeMB ? fmtSize(c.SizeMB) : ""}</span>
+      ${c.IsNew ? (c.IsDir ? `<span class="restored" title="${esc(t("newDirHint"))}">${esc(t("newDirHint"))}</span>` : `<button class="btn act" data-act="${esc(c.Name)}" ${state.gameRunning ? "disabled" : ""}>${esc(t("activate"))}</button>`) : ""}</div>`;
+  const fresh = d.Candidates.filter(c => c.IsNew);
+  const old = d.Candidates.filter(c => !c.IsNew);
+  const zips = fresh.filter(c => !c.IsDir);
+  $("fList").innerHTML = fresh.length
+    ? `<div class="sect"><span>${esc(t("newSect"))}</span>${zips.length > 1 ? `<button class="btn act" data-act-all="1" ${state.gameRunning ? "disabled" : ""}>${esc(t("activateAll"))}</button>` : ""}</div>`
+      + fresh.map(row).join("") + (old.length ? `<div class="sect"><span>${esc(t("oldSect"))}</span></div>` + old.map(row).join("") : "")
+    : old.map(row).join("");
+  $("fList").querySelectorAll("[data-act]").forEach(b => b.onclick = e => { e.stopPropagation(); activateMods([b.dataset.act], b); });
+  $("fList").querySelectorAll("[data-act-all]").forEach(b => b.onclick = e => { e.stopPropagation(); activateMods(zips.map(c => c.Name), b); });
   $("fList").querySelectorAll(".pickrow").forEach(r => r.onclick = () => {
     const n = r.dataset.n;
     state.folderPick.has(n) ? state.folderPick.delete(n) : state.folderPick.add(n);
@@ -1262,6 +1290,20 @@ function updateFolderFoot() {
   $("fAll").onclick = () => { state.folderPick = all ? new Set() : new Set(d.Candidates.map(c => c.Name)); renderFolderModal(); };
   $("fOk").disabled = !effective.length || state.gameRunning;
   $("fOk").textContent = effective.length ? t("fOkN", { n: fmt(effective.length), s: fmtSize(mb) }) : t("nothing");
+}
+
+async function activateMods(mods, btn) {
+  if (btn) btn.disabled = true;
+  try {
+    const r = await api("/api/activate", { sg: state.sg, mods });
+    toast(t("activated", { n: fmt(r.changed.length) }));
+    const d = await api(`/api/folder?sg=${encodeURIComponent(state.sg)}&detail=1`);
+    state.folderDetail = d;
+    const names = new Set(d.Candidates.map(c => c.Name));
+    state.folderPick = new Set([...state.folderPick].filter(n => names.has(n)));
+    if (d.Candidates.length) renderFolderModal(); else closeModal();
+    await loadUsage(state.sg, true);
+  } catch (e) { toast(e.message, true); if (btn) btn.disabled = false; }
 }
 
 async function applyFolderClean() {

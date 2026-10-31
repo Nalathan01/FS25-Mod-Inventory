@@ -137,6 +137,12 @@ internal sealed class InventurServer
                 SendJson(ctx, 200, Undo(folder, AppEnv.GetString(body, "date"), AppEnv.GetStrings(body, "mods")));
             }
             else if (path == "/api/folder") SendJson(ctx, 200, FolderResponse(req.QueryString["sg"], req.QueryString["detail"] == "1"));
+            else if (path == "/api/activate")
+            {
+                Dictionary<string, object> body = ReadBody(req);
+                string folder = Savegames.FolderFor(AppEnv.GetString(body, "sg"));
+                SendJson(ctx, 200, FolderOps.Activate(folder, AppEnv.GetStrings(body, "mods")));
+            }
             else if (path == "/api/folder/preview")
             {
                 Dictionary<string, object> body = ReadBody(req);
@@ -421,6 +427,8 @@ internal sealed class InventurServer
             d["Author"] = c.Author;
             d["HasIcon"] = c.HasIcon;
             d["IsMap"] = c.IsMap;
+            d["IsNew"] = c.IsNew;
+            d["IsDir"] = c.IsDir;
             candidates.Add(d);
         }
         Dictionary<string, object> res = new Dictionary<string, object>();

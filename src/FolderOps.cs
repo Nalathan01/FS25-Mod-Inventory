@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Xml;
 
@@ -27,6 +28,7 @@ internal sealed class FolderEntry
     public bool IsDir;
     public string Kind;
     public long SizeBytes;
+    public DateTime Added;
 }
 
 internal sealed class Candidate
@@ -39,6 +41,8 @@ internal sealed class Candidate
     public string Author;
     public bool HasIcon;
     public bool IsMap;
+    public bool IsNew;
+    public bool IsDir;
 }
 
 internal sealed class FolderPlan
@@ -117,7 +121,9 @@ internal static class FolderOps
             e.Path = z;
             e.IsDir = false;
             e.Kind = NativeLinks.LinkCount(z) > 1 ? "Hardlink" : "Kopie";
-            e.SizeBytes = new FileInfo(z).Length;
+            FileInfo fi = new FileInfo(z);
+            e.SizeBytes = fi.Length;
+            e.Added = fi.CreationTime > fi.LastWriteTime ? fi.CreationTime : fi.LastWriteTime;
             entries.Add(e);
         }
         foreach (string d in Directory.GetDirectories(folder))
@@ -131,6 +137,7 @@ internal static class FolderOps
             e.IsDir = true;
             e.Kind = AppEnv.IsReparsePoint(d) ? "Junction" : "Kopie";
             e.SizeBytes = Usage.DirectorySize(d, true);
+            e.Added = Directory.GetCreationTime(d);
             entries.Add(e);
         }
         return entries;
@@ -181,6 +188,17 @@ internal static class FolderOps
             }
         }
 
+        DateTime lastSave = DateTime.MinValue;
+        foreach (SharingSavegame s in sharing)
+        {
+            try
+            {
+                DateTime t = File.GetLastWriteTime(Path.Combine(s.Folder, "careerSavegame.xml"));
+                if (t > lastSave) lastSave = t;
+            }
+            catch (Exception) { }
+        }
+
         List<Candidate> candidates = new List<Candidate>();
         long keptSize = 0;
         foreach (FolderEntry e in entries)
@@ -191,6 +209,8 @@ internal static class FolderOps
             row.Kind = e.Kind;
             row.SizeMB = Math.Round(e.SizeBytes / 1048576.0, 1);
             row.Title = e.Name;
+            row.IsDir = e.IsDir;
+            row.IsNew = lastSave > DateTime.MinValue && e.Added > lastSave;
             if (detailed)
             {
                 ModProfile prof = Usage.Profile(e.Name, new ModLocation(e.Path, e.IsDir, true));
@@ -308,6 +328,102 @@ internal static class FolderOps
         SaveHistoryEntry(savegameFolder, h);
         AppEnv.Log("ModUsage", Path.GetFileName(savegameFolder) + ": " + removed.Count.ToString(CultureInfo.InvariantCulture) + " unbenutzte Mods deaktiviert: " + string.Join(", ", removedNames.ToArray()));
         return removedNames;
+    }
+
+    public static Dictionary<string, object> Activate(string savegameFolder, List<string> modNames)
+    {
+        if (AppEnv.GameRunning()) throw new InvalidOperationException(GameRunningMessage);
+        SavegameInfo info = Savegames.Info(savegameFolder);
+        if (info == null) throw new InvalidOperationException("Spielstand nicht lesbar: " + savegameFolder);
+        UsageResult usage = Usage.Analyze(savegameFolder);
+        if (usage.FolderMismatch) throw new InvalidOperationException("Dieser Spielstand gehoert zu einem anderen Mods-Ordner als dem gerade im Spiel eingestellten.");
+        string folder = Context(savegameFolder, info.MapId).Folder;
+        HashSet<string> active = new HashSet<string>(Savegames.ActiveModNames(savegameFolder), StringComparer.OrdinalIgnoreCase);
+
+        List<string> order = new List<string>();
+        HashSet<string> seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        List<string> missing = new List<string>();
+        Queue<string> queue = new Queue<string>(modNames);
+        while (queue.Count > 0)
+        {
+            string n = queue.Dequeue();
+            if (active.Contains(n) || !seen.Add(n)) continue;
+            string zip = Path.Combine(folder, n + ".zip");
+            if (!File.Exists(zip))
+            {
+                if (Directory.Exists(Path.Combine(folder, n))) throw new InvalidOperationException("Entpackte Mods lassen sich nur im Spiel einschalten: " + n);
+                if (!n.StartsWith("pdlc_", StringComparison.OrdinalIgnoreCase)) missing.Add(n);
+                continue;
+            }
+            order.Add(n);
+            foreach (string dep in Usage.Profile(n, new ModLocation(zip, false, true)).Dependencies) queue.Enqueue(dep);
+        }
+        if (missing.Count > 0) throw new InvalidOperationException("Diese Abhaengigkeiten fehlen im Mods-Ordner: " + string.Join(", ", missing.ToArray()));
+        if (order.Count == 0) return Obj("changed", new List<string>());
+
+        string careerPath = Path.Combine(savegameFolder, "careerSavegame.xml");
+        AppEnv.BackupFile(careerPath);
+        XmlDocument xml = new XmlDocument();
+        xml.PreserveWhitespace = true;
+        xml.Load(careerPath);
+        XmlElement root = xml.DocumentElement;
+        XmlNode anchor = null;
+        foreach (XmlNode child in root.ChildNodes)
+        {
+            XmlElement el = child as XmlElement;
+            if (el != null && el.LocalName == "mod") anchor = el;
+        }
+        string indent = "\n    ";
+        if (anchor != null && anchor.PreviousSibling != null && anchor.PreviousSibling.NodeType == XmlNodeType.Whitespace) indent = anchor.PreviousSibling.Value;
+        foreach (string n in order)
+        {
+            string zip = Path.Combine(folder, n + ".zip");
+            ModProfile prof = Usage.Profile(n, new ModLocation(zip, false, true));
+            XmlElement el = xml.CreateElement("mod");
+            el.SetAttribute("modName", n);
+            el.SetAttribute("title", prof.Title ?? n);
+            el.SetAttribute("version", prof.Version ?? "1.0.0.0");
+            el.SetAttribute("required", "false");
+            el.SetAttribute("fileHash", GameHash(zip, n));
+            XmlNode ws = xml.CreateWhitespace(indent);
+            if (anchor != null)
+            {
+                root.InsertAfter(ws, anchor);
+                root.InsertAfter(el, ws);
+            }
+            else
+            {
+                root.AppendChild(ws);
+                root.AppendChild(el);
+            }
+            anchor = el;
+        }
+        xml.Save(careerPath);
+        AppEnv.Log("ModUsage", Path.GetFileName(savegameFolder) + ": " + order.Count.ToString(CultureInfo.InvariantCulture) + " Mods eingeschaltet: " + string.Join(", ", order.ToArray()));
+        return Obj("changed", order);
+    }
+
+    private static string GameHash(string zipPath, string modName)
+    {
+        using (MD5 md5 = MD5.Create())
+        using (FileStream fs = new FileStream(zipPath, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 20))
+        {
+            byte[] buffer = new byte[1 << 20];
+            int read;
+            while ((read = fs.Read(buffer, 0, buffer.Length)) > 0) md5.TransformBlock(buffer, 0, read, null, 0);
+            byte[] name = Encoding.ASCII.GetBytes(modName);
+            md5.TransformFinalBlock(name, 0, name.Length);
+            StringBuilder sb = new StringBuilder();
+            foreach (byte b in md5.Hash) sb.Append(b.ToString("x2", CultureInfo.InvariantCulture));
+            return sb.ToString();
+        }
+    }
+
+    private static Dictionary<string, object> Obj(string key, object value)
+    {
+        Dictionary<string, object> d = new Dictionary<string, object>();
+        d[key] = value;
+        return d;
     }
 
     private static XmlNode FindModNode(XmlElement root, string modName)
